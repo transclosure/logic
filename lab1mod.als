@@ -70,3 +70,12 @@ check ConnectedKittyBacon_equals_SuperConnected for exactly 5 Cat
 // No. Transitive closure cannot be expressed as predicates since it
 // is a second order function. Trying to make connectionsOf recursive would
 // only work if the friends relation was not symmetric.
+
+// UNSAT / Provenance of the Connections of Kitty Bacon
+one sig CoolCatClub {
+  members : set Cat
+}
+
+fact KittyBaconIsCool {
+  CoolCatClub.members = connectionsOf[KittyBacon]
+}
