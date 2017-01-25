@@ -34,7 +34,7 @@ pred isFriendOfFriend[disj cat, kitty : one Cat] {
 }
 
 fun friendsOfFriendsOf[cat : Cat] : set Cat {
-  cat.friends.friends - cat.friends - cat
+  friendsOf[friendsOf[cat]] - friendsOf[cat] - cat
 }
 
 run {}
@@ -63,10 +63,10 @@ check ConnectedKittyBacon_equals_SuperConnected for exactly 3 Cat
 check ConnectedKittyBacon_equals_SuperConnected for exactly 4 Cat
 
 fun friendsOfFriendsOfFriendsOf[cat : Cat] : set Cat {
-  cat.friends.friends.friends - cat.friends.friends - cat.friends - cat
+  friendsOf[friendsOf[friendsOf[cat]]] - friendsOf[friendsOf[cat]] - friendsOf[cat] - cat
 }
 
 check ConnectedKittyBacon_equals_SuperConnected for exactly 5 Cat
 // No. Transitive closure cannot be expressed as predicates since it
-// is a second order function. Trying to make connectionsOf recursive would
+// is a higher order function. Trying to make connectionsOf recursive would
 // only work if the friends relation was not symmetric.
