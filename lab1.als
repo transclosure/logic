@@ -1,7 +1,9 @@
+//
 // Natasha Danas - Lab 1
 //
-
+//
 // Cat friendships
+//
 sig Cat {
   friends : set Cat
 }
@@ -17,8 +19,9 @@ fact OutsideFriends {
 fact TwoWayStreet {
   all c : Cat | all f : c.friends | c in f.friends
 }
-
+//
 // Kitty Bacon
+//
 one sig KittyBacon extends Cat {}
 
 fun friendsOf[cat : Cat] : set Cat {
@@ -38,8 +41,9 @@ fun friendsOfFriendsOf[cat : Cat] : set Cat {
 }
 
 run {}
-
+//
 // Degrees of Kitty Bacon
+//
 pred ConnectedKittyBacon {
   Cat - KittyBacon = connectionsOf[KittyBacon]
 }
@@ -48,7 +52,7 @@ fun connectionsOf[cat : Cat] : set Cat {
   friendsOf[cat] + friendsOfFriendsOf[cat] + friendsOfFriendsOfFriendsOf[cat]
 }
 
-run ConnectedKittyBacon for exactly 5 Cat
+run ConnectedKittyBacon
 
 pred SuperConnected {
   Cat - KittyBacon in KittyBacon.^friends
@@ -67,6 +71,24 @@ fun friendsOfFriendsOfFriendsOf[cat : Cat] : set Cat {
 }
 
 check ConnectedKittyBacon_equals_SuperConnected for exactly 5 Cat
-// No. Transitive closure cannot be expressed as predicates since it
-// is a higher order function. Trying to make connectionsOf recursive would
-// only work if the friends relation was not symmetric.
+/* 
+  No. make better explain. 
+*/
+//
+// Kitty Bacon and the cool cat club
+//
+one sig CoolCatClub {
+  members : set Cat
+}
+fact CoolKittyBaconConnections {
+  CoolCatClub.members = connectionsOf[KittyBacon]
+}
+// UNSAT CORE QUERY
+pred KittyBaconIsCool {
+  KittyBacon in CoolCatClub.members
+}
+run KittyBaconIsCool for exactly 4 Cat
+// PROV QUERY
+run {} for exactly 4 Cat
+// whynot CoolCatClub.members CoolCatClub$0->KittyBacon$0
+
