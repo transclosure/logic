@@ -1,7 +1,6 @@
 abstract sig Memory {}
 sig HeapCell extends Memory {}
 one sig Stack extends Memory {}
-run SomeMemory {some Memory} for exactly 4 Memory 
 
 // 1. What is the appropriate type for references?
 // 2. What is the appropriate type for allocated?
@@ -15,7 +14,6 @@ abstract sig State {
     all cell : HeapCell | ref_count[cell] = #(cell[references])
 }
 one sig StateA, StateB, StateC extends State {}
-run SomeState {some State.references} for exactly 4 Memory 
 
 // 3. What does reachableFromStack look like?
 pred stackReachable[m : Memory, state : State] {
@@ -31,12 +29,11 @@ initial safe memory state implies that the
 following state will also be safe:
 */
 pred safe[state : State] {
-	all m : HeapCell | stackReachable[m,state]  =>
-					 m in state.allocated
+	all m : HeapCell | stackReachable[m,state] => m in state.allocated
 }
 check soundness {
     safe[StateA] => safe[StateC]
-} for 8 Memory
+} for 4 Memory
 
 /*
 5. A memory state is clean if no memory that is 
@@ -48,14 +45,12 @@ an initial clean memory state implies that the
 following state will also be totally collected:
 */
 pred clean[state : State] {
-	all m : HeapCell |  m in state.allocated =>
-                     stackReachable[m,state]
-					
+	all m : HeapCell |  m in state.allocated => stackReachable[m,state]
 }
 pred complete {
     clean[StateA] => clean[StateC]
 } 
-check completeness {complete} for 8 Memory
+check completeness {complete} for 4 Memory 
 
 /* 
 8. Between StateA and StateB, the program 
@@ -74,22 +69,22 @@ it has a reference-count of 0 in StateB. NO TRANS CLOSURE
 */
 fact B_to_C_GarbageCollected {
    	StateB.references = StateC.references
-	all m : HeapCell | m not in StateC.allocated iff
-					   StateB.ref_count[m] = 0
+	all m : HeapCell | m not in StateC.allocated <=> StateB.ref_count[m] = 0
 }
 
 /* 10. Research questions: why isn't completeness satisfied, but soundness is? 
 Add the extra facts, look at counterexamples, answer survey questions
 */
+// ONLY EXTRA FACT NEEDED BESIDES FIX
 fact UnallocatedCantReference {
 	all s : State | all m : HeapCell - s.allocated | no s.references[m]
 }
-fact EverythingStartsAllocated {
-	all m : HeapCell | m in StateA.allocated
-}
-
 pred fix {
 	all s : State | all m : HeapCell | m not in m.^(s.references)
 }
-check fixcompleteness {fix => complete} for 8 Memory
+check fixcompleteness {fix => complete} for 4 Memory
 
+// EXTRA FACTS TO FIX SNAGGING
+fact extras {
+	//one StateA.references
+}
