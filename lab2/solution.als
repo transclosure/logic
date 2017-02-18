@@ -9,11 +9,12 @@ one sig Stack extends Memory {}
 abstract sig State {
 	allocated: set HeapCell,
 	references: Memory -> set HeapCell,
-	ref_count: HeapCell -> one Int
-}{
-    all cell : HeapCell | ref_count[cell] = #(cell[references])
 }
 one sig StateA, StateB, StateC extends State {}
+
+fun ref_count[s: State, cell: HeapCell]: Int {
+  #(cell[s.references])
+}
 
 // 3. What does reachableFromStack look like?
 pred stackReachable[m : Memory, state : State] {
@@ -69,13 +70,12 @@ it has a reference-count of 0 in StateB. NO TRANS CLOSURE
 */
 fact B_to_C_GarbageCollected {
    	StateB.references = StateC.references
-	all m : HeapCell | m not in StateC.allocated <=> StateB.ref_count[m] = 0
+	all m : HeapCell | m not in StateC.allocated <=> ref_count[StateB, m] = 0
 }
 
 /* 10. Research questions: why isn't completeness satisfied, but soundness is? 
 Add the extra facts, look at counterexamples, answer survey questions
 */
-// ONLY EXTRA FACT NEEDED BESIDES FIX
 fact UnallocatedCantReference {
 	all s : State | all m : HeapCell - s.allocated | no s.references[m]
 }
@@ -84,7 +84,3 @@ pred fix {
 }
 check fixcompleteness {fix => complete} for 4 Memory
 
-// EXTRA FACTS TO FIX SNAGGING
-fact extras {
-	//one StateA.references
-}
