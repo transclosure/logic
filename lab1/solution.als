@@ -40,7 +40,6 @@ fun friendsOfFriendsOf[cat : Cat] : set Cat {
   friendsOf[friendsOf[cat]] - friendsOf[cat] - cat
 }
 
-run {}
 //
 // Degrees of Kitty Bacon
 //
