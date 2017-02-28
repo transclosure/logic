@@ -64,7 +64,7 @@ sig Move {
     -- FILL the column case 
     before.cols > choicen
     before.rows = after.rows
-    after.cols = choicen
+    after.cols = choicen    
   } 
 
   -- Alternating moves
@@ -74,6 +74,8 @@ sig Move {
 fact StartingBoard {
   // Player one starts
   first.player = One
+  first.rows > 0
+  first.cols > 0
 }
 
 fact Progress {
@@ -101,11 +103,13 @@ pred winner[p: Player] {
 
 
 pred twoCanWin {
+  -- FILL
   -- an instance where player 2 wins
 }
 run twoCanWin for 6 Board, 5 Move, 5 Int
 
 pred canFinishEarly {
+  -- FILL
   -- an instance with more than one unplayable board
 } 
 run canFinishEarly for 6 Board, 5 Move, 5 Int
