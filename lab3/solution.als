@@ -131,9 +131,9 @@ assert StrategyWorks {
 	PlayerOneStrategy implies winner[One]
 }
 check StrategyWorks for 
-      exactly  5 Board, 
-      exactly  4 Move, 
-               4 Int 
+        exactly 8 Board, 
+        exactly 7 Move, 
+       7 Int 
 
 -- Did this pass? 
 -- If it did, does that mean that the strategy is correct?
@@ -190,10 +190,8 @@ pred playerOneStrategyBuggyAllowsSquareStart {
 --  (This way everybody should get the same core.)
 
 run playerOneStrategyBuggyAllowsSquareStart for
-      exactly 5 Board, 
-      exactly  4 Move, 
+       5 Board, 
+        4 Move, 
                4 Int
 -- You should see an unsatisfiable result. 
   
-
-
