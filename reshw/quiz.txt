@@ -1,0 +1,23 @@
+Question 1
+
+Verify that the resolution rule is sound by writing a truth table for it. Use & for and, | for or, - for negation, and -> for implication.
+
+As an example, Modus Ponens states, for any two formulas A and A -> B, we will be able to derive B. Therefore we would check for (A & (A -> B)) -> B:
+A 	B 	A -> B 	A & (A -> B) 	(A & (A -> B)) -> B
+T 	T 	T 	T 	T
+T 	F 	F 	F 	T
+F 	T 	T 	F 	T
+F 	F 	T 	F 	T
+
+So the rule Modus Ponens is sound.
+
+For simplicity, you should consider a special case of resolution rule where you resolve p | q and -p | r to derive q | r.
+Question 2
+
+Unlike DPLL, this algorithm does not use backtracking. Why can the runtime of this algorithm be exponential?
+Question 3
+
+If you have a clause containing both p and -p for some variable p, what optimization could you make?
+Question 4
+
+If a formula is satisfiable, what will be in the clause set when the algorithm is finished?
