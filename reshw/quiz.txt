@@ -1,23 +1,35 @@
 Question 1
 
-Verify that the resolution rule is sound by writing a truth table for it. Use & for and, | for or, - for negation, and -> for implication.
+p    q    r    p|q 	 -p|r 	 q|r    (p|q)&(-p|r)    ((p|q)&(-p|r))->q|r
 
-As an example, Modus Ponens states, for any two formulas A and A -> B, we will be able to derive B. Therefore we would check for (A & (A -> B)) -> B:
-A 	B 	A -> B 	A & (A -> B) 	(A & (A -> B)) -> B
-T 	T 	T 	T 	T
-T 	F 	F 	F 	T
-F 	T 	T 	F 	T
-F 	F 	T 	F 	T
+T    T    T     T      T      T          T                T          
+T    T    F     T      F      T          F                T
+T    F    T     T      T      T          T                T
+T    F    F     T      F      F          F                T
+F    T    T     T      T      T          T                T
+F    T    F     T      T      T          T                T
+F    F    T     F      T      T          F                T
+F    F    F     F      T      F          F                T
 
-So the rule Modus Ponens is sound.
 
-For simplicity, you should consider a special case of resolution rule where you resolve p | q and -p | r to derive q | r.
 Question 2
 
-Unlike DPLL, this algorithm does not use backtracking. Why can the runtime of this algorithm be exponential?
+The runtime of this algorithm can be exponential because of our naive resolution 
+application without backtracking. Consider an example of 2^(k)-1 clauses and k
+variables. The clause set consists of all possible 2^(k) clauses of size k, except
+for the fully negated clause. This clause set will always be satisfied by setting
+all variables to true. Almost every clause will have another clause to resolve to
+for every variable k. Our naive algorithm with apply resolution to each clause pair,
+resulting in an exponential runtime in the number of variables.
+
+
 Question 3
 
-If you have a clause containing both p and -p for some variable p, what optimization could you make?
+If a clause contains p and -p, it is tautologous. Therefore, we can remove this
+clause from the set as it will not affect satisfiability.
+
 Question 4
 
-If a formula is satisfiable, what will be in the clause set when the algorithm is finished?
+If the clause set is satisfiable, the resolution algorithm will produce a set of
+satisfiable non-empty clauses that can be used to produce a truth assignment 
+similar to DPLL.
