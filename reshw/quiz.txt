@@ -31,5 +31,5 @@ clause from the set as it will not affect satisfiability.
 Question 4
 
 If the clause set is satisfiable, the resolution algorithm will produce a set of
-satisfiable non-empty clauses that can be used to produce a truth assignment 
-similar to DPLL.
+satisfiable non-empty clauses that can be used to produce all truth assignments 
+for the original clause set. 
