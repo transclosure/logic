@@ -32,4 +32,4 @@ Question 4
 
 If the clause set is satisfiable, the resolution algorithm will produce a set of
 satisfiable non-empty clauses that can be used to produce all truth assignments 
-for the original clause set. 
+for the original clause set. The history of resolutions still provide a proof.
