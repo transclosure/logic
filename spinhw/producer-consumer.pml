@@ -1,48 +1,46 @@
 // Constants
-#define TRUE 1
-#define FALSE 0
+#define TRU 1
+#define FLS 0
 // Is there newly produced data?
-bool flag = FALSE;
+bool flag = FLS;
 // Which processes are in the critical section? 
 bool in_cs[2];
 // Is there newly consumed data?
-bool data = TRUE;
+bool data = TRU;
 
 // ASSUME: neither process stops producing/consuming
 
 active proctype Producer() {
 	start:
-		data == TRUE;
-		in_cs[1 - _pid] == FALSE;
-		in_cs[_pid] = TRUE;
-		in_cs[1 - _pid] == FALSE;
+		data == TRU;
+		in_cs[1 - _pid] == FLS;
+		in_cs[_pid] = TRU;
+		in_cs[1 - _pid] == FLS;
 		// ASSERT: mutual exclusion of critical section
-		assert(in_cs[1 - _pid] == FALSE);
+		assert(in_cs[1 - _pid] == FLS);
 		// ASSERT: never overwrite data unless read
-		assert(data == TRUE);
-		data = FALSE;
-		flag = TRUE;
-		in_cs[_pid] = FALSE;
+		assert(data == TRU);
+		data = FLS;
+		flag = TRU;
+		in_cs[_pid] = FLS;
 	goto start;
 }
 
 active proctype Consumer() {
 	start:
-		flag == TRUE;
-		in_cs[1 - _pid] == FALSE;
-		in_cs[_pid] = TRUE;
-		in_cs[1 - _pid] == FALSE;
+		flag == TRU;
+		in_cs[1 - _pid] == FLS;
+		in_cs[_pid] = TRU;
+		in_cs[1 - _pid] == FLS;
 		// ASSERT: mutual exclusion of critical section
-		assert(in_cs[1 - _pid] == FALSE);
+		assert(in_cs[1 - _pid] == FLS);
 		// ASSERT: never read data unless unread
-		assert(flag == TRUE);
-		flag = FALSE;
-		data = TRUE;
-		in_cs[_pid] = FALSE;
+		assert(flag == TRU);
+		flag = FLS;
+		data = TRU;
+		in_cs[_pid] = FLS;
 	goto start;
 }
 
 // ASSERT: non-starvation / no deadlocks
-// is this strong enough???????
-ltl { always (eventually (in_cs[0])) &
-			 (eventually (in_cs[1]))}
+ltl { always (eventually (in_cs[0])) & (eventually (in_cs[1])) }
