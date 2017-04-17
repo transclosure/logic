@@ -3,8 +3,8 @@ from sys import stdin
 '''
 Constants
 '''
-def UNSAT(): return "UNSAT"
-def SAT(): return "SAT"
+def UNSAT(): return "unsat"
+def SAT(): return "sat"
 '''
 Runs one resolution step
 '''
@@ -46,7 +46,7 @@ def main():
             variable = int(word)
             clause.add(variable)
             variables.add(abs(variable))
-        clauses.append(clause)
+        if clause: clauses.append(clause)
     print resloop(clauses, variables)
     return
 main()
