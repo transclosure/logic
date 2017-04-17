@@ -43,4 +43,6 @@ active proctype Consumer() {
 }
 
 // ASSERT: non-starvation / no deadlocks
-ltl no_deadlocks { always (eventually (in_cs[0] || in_cs[1])) }
+// is this strong enough???????
+ltl { always (eventually (in_cs[0])) &
+			 (eventually (in_cs[1]))}
