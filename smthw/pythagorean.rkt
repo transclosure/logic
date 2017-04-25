@@ -24,26 +24,30 @@
 (define (part1)
   ; add assertions and/or declare additional symbols
   ; for part1 here
-  (define euclid-correct-let (forall (list m n)
-                                     (implies (euclid-bounds m n)
-                                              (let ([x (euclid-x m n)]
-                                                    [y (euclid-y m n)]
-                                                    [z (euclid-z m n)])
-                                                (= (+ (* x x) (* y y)) (* z z))))))
-  (define euclid-correct-some (forall (list m n)
-                                      (implies (euclid-bounds m n)
-                                               (exists (list x y z)
-                                                       (and (= x (euclid-x m n))
-                                                            (= y (euclid-y m n))
-                                                            (= z (euclid-z m n))
-                                                            (= (+ (* x x) (* y y)) (* z z)))))))
+  (define-values (euclid-correct-let)
+    (forall (list m n)
+            (implies (euclid-bounds m n)
+                     (let ([x (euclid-x m n)]
+                           [y (euclid-y m n)]
+                           [z (euclid-z m n)])
+                       (= (+ (* x x) (* y y)) (* z z))))))
+  (define-values (euclid-correct-some)
+    (forall (list m n)
+            (implies (euclid-bounds m n)
+                     (exists (list x y z)
+                             (and (= x (euclid-x m n))
+                                  (= y (euclid-y m n))
+                                  (= z (euclid-z m n))
+                                  (= (+ (* x x) (* y y)) (* z z)))))))
+
   ; GRIPE: let and some assertions do not include (x,y,z) intermediate values in model
   ; SPECULATE: let and some are both skolemized away under the hood, treated as uninterp function
   ; IMPACT: i have to jump through hoops relaxing variables to debug???
   ; FIX: actually deal with existential search in a principled, explicit, and transparent way???
+
   ; end assertions for part1
   ; write down a formula for verification
-  (solve (assert euclid-correct-let)))
+  (solve (assert (euclid-correct-let))))
 ; replace ... in `part1-interp` with
 ; - `sat?` if `solve` in `part1` returning a model means the formula works
 ; - `unsat?` if `solve` in `part1` returning unsat means the formula works
@@ -52,16 +56,20 @@
 (define (part2)
   ; add assertions and/or declare additional symbols
   ; for part2 here
-  (define (euclid-gcd a b) (cond [(= b 0) a] [else (euclid-gcd (b (% a b)))]))
-  (define (gcd x y z) (euclid-gcd (euclid-gcd x y) z))
-  (define euclid-nonprimitive (exists (list m n) (and (euclid-bounds m n)
-                                                      (let ([x euclid-x]
-                                                            [y euclid-y]
-                                                            [z euclid-z])
-                                                        (not (= 1 (gcd x y z)))))))
+  (define-values (euclid-primitive)
+    (forall (list m n) (implies (euclid-bounds m n)
+                            (letrec ([x (euclid-x m n)]
+                           [y (euclid-y m n)]
+                           [z (euclid-z m n)]
+                                     [euclid-gcd (lambda (a b)
+                                                   (cond [(= b 0) a]
+                                                         [else (euclid-gcd (b (% a b)))]))]
+                                     [gcd (lambda (x y z)
+                                            (euclid-gcd (euclid-gcd x y) z))])
+                              (= 1 (gcd x y z))))))
   ; end assertions for part2
   ; write down a formula to test the hypothesis
-  (solve (assert euclid-nonprimitive)))
+  (solve (assert euclid-primitive)))
 
 ; replace ... in `part2-interp` with
 ; - `sat?` if `solve` in `part2` returning a model means
