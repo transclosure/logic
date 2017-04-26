@@ -19,35 +19,22 @@
 (define (euclid-x m n) (- (* m m) (* n n)))
 (define (euclid-y m n) (* (* m n) 2))
 (define (euclid-z m n) (+ (* m m) (* n n)))
+(define-symbolic anint integer?)
+(define (coprime a b) (exists (list anint) (= (% (* b anint) a) 1)))
 ; end assertions across Part 1 and Part 2
 
 (define (part1)
   ; add assertions and/or declare additional symbols
   ; for part1 here
-  (define-values (euclid-correct-let)
-    (forall (list m n)
-            (implies (euclid-bounds m n)
-                     (let ([x (euclid-x m n)]
-                           [y (euclid-y m n)]
-                           [z (euclid-z m n)])
-                       (= (+ (* x x) (* y y)) (* z z))))))
-  (define-values (euclid-correct-some)
-    (forall (list m n)
-            (implies (euclid-bounds m n)
-                     (exists (list x y z)
-                             (and (= x (euclid-x m n))
-                                  (= y (euclid-y m n))
-                                  (= z (euclid-z m n))
-                                  (= (+ (* x x) (* y y)) (* z z)))))))
-
-  ; GRIPE: let and some assertions do not include (x,y,z) intermediate values in model
-  ; SPECULATE: let and some are both skolemized away under the hood, treated as uninterp function
-  ; IMPACT: i have to jump through hoops relaxing variables to debug???
-  ; FIX: actually deal with existential search in a principled, explicit, and transparent way???
-
+  (define euclid-correct
+    (implies (and (euclid-bounds m n)
+                  (= x (euclid-x m n))
+                  (= y (euclid-y m n))
+                  (= z (euclid-z m n)))
+             (= (+ (* x x) (* y y)) (* z z))))
   ; end assertions for part1
   ; write down a formula for verification
-  (solve (assert (euclid-correct-let))))
+  (verify (assert euclid-correct)))
 ; replace ... in `part1-interp` with
 ; - `sat?` if `solve` in `part1` returning a model means the formula works
 ; - `unsat?` if `solve` in `part1` returning unsat means the formula works
@@ -56,21 +43,17 @@
 (define (part2)
   ; add assertions and/or declare additional symbols
   ; for part2 here
-  (define-values (euclid-primitive)
-    (forall (list m n) (implies (euclid-bounds m n)
-                            (letrec ([x (euclid-x m n)]
-                           [y (euclid-y m n)]
-                           [z (euclid-z m n)]
-                                     [euclid-gcd (lambda (a b)
-                                                   (cond [(= b 0) a]
-                                                         [else (euclid-gcd (b (% a b)))]))]
-                                     [gcd (lambda (x y z)
-                                            (euclid-gcd (euclid-gcd x y) z))])
-                              (= 1 (gcd x y z))))))
+  (define euclid-nonprimitive
+    (and (euclid-bounds m n)
+         (= x (euclid-x m n))
+         (= y (euclid-y m n))
+         (= z (euclid-z m n))
+         (or (not (coprime x y))
+             (not (coprime y z))
+             (not (coprime x z)))))
   ; end assertions for part2
   ; write down a formula to test the hypothesis
-  (solve (assert euclid-primitive)))
-
+  (solve (assert euclid-nonprimitive)))
 ; replace ... in `part2-interp` with
 ; - `sat?` if `solve` in `part2` returning a model means
 ;   it can produce non-primitive
