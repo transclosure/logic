@@ -2,7 +2,7 @@
 (require ocelot)
 
 ; Relations
-(define rR (-> univ univ))
+(define rR (declare-relation 2 "some r: univ -> univ"))
 ; Forumlas
 (define fNonempty
   (some rR))
