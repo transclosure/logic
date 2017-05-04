@@ -5,16 +5,23 @@
 (define rCat (declare-relation 1 "Cat : Cat"))
 (define rKittyBacon (declare-relation 1 "one KittyBacon : extends Cat"))
 (define rFriends (declare-relation 2 "Cat.friends : Cat -> Cat"))
-; Functions
+; Functions / Predicates / Asserts
 (define (F c)
   (join c rFriends))
 (define (FF c)
   (- (- (F (F c)) (F c)) c))
 (define (FFF c)
   (- (- (- (F (F (F c))) (F (F c))) (F c)) c))
-(define (connectionsOf c)
+(define (CONNECTIONSOF c)
   (+ (+ (F c) (F (F c))) (F (F (F c)))))
-; Forumlas
+(define CONNECTED
+  (= (- rCat rKittyBacon) (CONNECTIONSOF rKittyBacon)))
+(define SCONNECTED
+  (in (- rCat rKittyBacon) (join rKittyBacon (^ rFriends))))
+(define ISSUPERCONNECTED
+  (and (=> CONNECTED SCONNECTED)
+       (=> SCONNECTED CONNECTED)))
+; Facts
 (define fFriends
   (and (in (join rFriends univ) rCat)
        (in (join univ rFriends) rCat)))
@@ -31,7 +38,8 @@
   (= rFriends (~ rFriends)))
 
 ; Universes
-(define uCat (build-list 4 (lambda (v) (gensym "Cat"))))
+; TODO parameterize for quick bounds changes like in alloy
+(define uCat (build-list 3 (lambda (v) (gensym "Cat"))))
 (define uKittyBacon uCat)
 (define U (universe (append uCat uKittyBacon)))
 ; Bounds
@@ -43,13 +51,15 @@
 (define I (instantiate-bounds B))
 
 ; Commands
-(define c1 (solve (assert (interpret*
-                           (and fFriends
-                                fKittyBacon
-                                fNoFriendlessCats
-                                fNoSelfFriendship
-                                fSymmetricFriendship)
-                           I))))
+; TODO parameterize facts, assert, run etc
+(define c1 (verify (assert (interpret*
+                            (=> (and fFriends
+                                     fKittyBacon
+                                     fNoFriendlessCats
+                                     fNoSelfFriendship
+                                     fSymmetricFriendship)
+                                ISSUPERCONNECTED)
+                            I))))
 ; Models
 (define m1 (interpretation->relations (evaluate I c1)))
 m1
