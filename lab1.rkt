@@ -2,7 +2,7 @@
 (require ocelot)
 
 ; Universe of Discourse
-(require "discourse.rkt")
+(require "DISCOURSE.rkt")
 (declare-sig #t 3 "Cat")
 (declare-sig #t 1 "KittyBacon" "Cat")
 (declare-rel "Cat" 2 "friends")
