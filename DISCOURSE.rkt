@@ -16,7 +16,7 @@
   (let* ([SUPER (SUPER r)])
     (if (string? SUPER) (UNIV* SUPER) SUPER)))
 (define (BOUND r) (RELATION-BOUND (hash-ref DISCOURSE r)))
-
+                            
 (define (declare-rel parent arity name)
   (let* ([THIS (declare-relation arity name)]
          [SUPER parent]
@@ -41,15 +41,17 @@
          [R (RELATION THIS SUPER BOUND)])
     (hash-set! DISCOURSE name R)))
 
-(define (declare-cmd ocelot solve/verify?)
-  (let* ([U (universe
-             (first
-              (append
-               (filter list? (hash-map DISCOURSE (lambda (name relation) (SUPER name)))))))]
-         [B (bounds U (hash-map DISCOURSE
-                                (lambda (name relation) (RELATION-BOUND relation))))]
+(define (declare-cmd ocelot [query none])
+  (let* ([U (first (append
+                    (filter list? (hash-map DISCOURSE (lambda (name rel) (SUPER name))))))]
+         [E (declare-relation 1 "EVAL(QUERY):=")]
+         [B (bounds (universe U)
+                    (cons (make-upper-bound E (map list U))
+                          (hash-map DISCOURSE (lambda (name rel) (RELATION-BOUND rel)))))]
          [I (instantiate-bounds B)]
-         [rosette (interpret* ocelot I)]
+         [rosette (interpret* (and ocelot (= E query)) I)]
          [cmd (assert rosette)]
-         [res (if solve/verify? (solve cmd) (verify cmd))]) ;TODO pretty printer
-    (if (unsat? res) res (interpretation->relations (evaluate I res)))))
+         [res (solve cmd)])
+    (begin 
+      (if (unsat? res) res
+          (interpretation->relations (evaluate I res))))))

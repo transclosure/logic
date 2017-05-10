@@ -37,6 +37,5 @@
                     fNoSelfFriendship
                     fSymmetricFriendship
                     (not (ISSUPERCONNECTED)))
-               #t))
+               (join (THIS "KittyBacon") (THIS "friends"))))
 (verifyISSUPERCONNECTED)
-
