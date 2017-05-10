@@ -44,7 +44,7 @@
 (define (declare-cmd ocelot [query none])
   (let* ([U (first (append
                     (filter list? (hash-map DISCOURSE (lambda (name rel) (SUPER name))))))]
-         [E (declare-relation 1 "EVAL(QUERY):=")]
+         [E (declare-relation 1 (string-append "EVAL{  " (~a query) "  }"))]
          [B (bounds (universe U)
                     (cons (make-upper-bound E (map list U))
                           (hash-map DISCOURSE (lambda (name rel) (RELATION-BOUND rel)))))]
