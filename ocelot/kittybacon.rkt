@@ -1,15 +1,57 @@
 #lang rosette
 (require ocelot)
-(current-bitwidth #f)
 
-; Relations
-(define rCat (declare-relation 1 "Cat : Cat"))
-(define rKittyBacon (declare-relation 1 "one KittyBacon : extends Cat"))
-(define rFriends (declare-relation 2 "Cat.friends : Cat -> Cat"))
+; discourse.rkt
+(require racket/format)
+(define DISCOURSE (make-hash))
+(struct RELATION (THIS SUPER BOUND))
+(define (THIS r) (RELATION-THIS (hash-ref DISCOURSE r)))
+(define (SUPER r) (RELATION-SUPER (hash-ref DISCOURSE r)))
+(define (UNIV upperbound name)
+  (build-list upperbound (lambda (i) (string-append name "$" (~a i)))))
+(define (UNIV* r)
+  (let* ([SUPER (SUPER r)])
+    (if (string? SUPER) (UNIV* SUPER) SUPER)))
+(define (BOUND r) (RELATION-BOUND (hash-ref DISCOURSE r)))
+(define (declare-rel parent arity name)
+  (let* ([THIS (declare-relation arity name)]
+         [SUPER parent]
+         [UNIV (UNIV* SUPER)]
+         [BOUND (case arity
+                  [(2) (make-product-bound THIS UNIV UNIV)]
+                  [else (error "unsupported")])]
+         [R (RELATION THIS SUPER BOUND)])
+    (hash-set! DISCOURSE name R)))
+(define (declare-sig upperbound name [extends ""])
+  (let* ([THIS (declare-relation 1 name)]
+         [SUPER (case extends
+                  [("") (UNIV upperbound name)]
+                  [else extends])]
+         [UNIV (case extends
+                 [("") SUPER]
+                 [else (UNIV* SUPER)])] ;TODO optimize upper bound here?
+         [BOUND (make-upper-bound THIS (map list UNIV))]
+         [R (RELATION THIS SUPER BOUND)])
+    (hash-set! DISCOURSE name R)))
+(define (declare-cmd ocelot solve/verify?)
+  (let* ([U (universe
+             ;TODO fix internal hash-map eq? byval vs byref issue...
+             (first (append (hash-map DISCOURSE (lambda (name relation) (UNIV* name))))))]
+         [B (bounds U (hash-map DISCOURSE
+                                (lambda (name relation) (RELATION-BOUND relation))))]
+         [I (begin (println B) (instantiate-bounds B))]
+         [rosette (interpret* ocelot I)]
+         [cmd (assert rosette)]
+         [res (if solve/verify? (solve cmd) (verify cmd))]) ;TODO pretty printer
+    (if (unsat? res) res (interpretation->relations (evaluate I res)))))
+
+; Universe of Discourse
+(declare-sig 2 "Cat")
+(declare-sig 1 "KittyBacon" "Cat")
+(declare-rel "Cat" 2 "friends")
 ; Functions / Predicates / Asserts
-; TODO type system structs
 (define (F c)
-  (join c rFriends))
+  (join c (THIS "friends")))
 (define (FF c)
   (- (- (F (F c)) (F c)) c))
 (define (FFF c)
@@ -17,57 +59,25 @@
 (define (CONNECTIONSOF c)
   (+ (+ (F c) (FF c)) (FFF c)))
 (define (CONNECTED)
-  (= (- rCat rKittyBacon) (CONNECTIONSOF rKittyBacon)))
+  (= (- (THIS "Cat") (THIS "KittyBacon")) (CONNECTIONSOF (THIS "KittyBacon"))))
 (define (SCONNECTED)
-  (= (- rCat rKittyBacon) (join rKittyBacon (^ rFriends))))
+  (= (- (THIS "Cat") (THIS "KittyBacon")) (join (THIS "KittyBacon") (^ (THIS "friends")))))
 (define (ISSUPERCONNECTED)
   (and (=> (CONNECTED) (SCONNECTED))
        (=> (SCONNECTED) (CONNECTED))))
 ; Facts
-; TODO type system macros
-(define fFriends
-  (and (in (join rFriends univ) rCat)
-       (in (join univ rFriends) rCat)))
-(define fKittyBacon
-  (and (one rKittyBacon)
-       (in rKittyBacon rCat)))
 (define fNoFriendlessCats
-  (no ([c rCat])
-      (no (join c rFriends))))
+  (no ([c (THIS "Cat")])
+      (no (join c (THIS "friends")))))
 (define fNoSelfFriendship
-  (no ([c rCat])
-      (in c (join c rFriends))))
+  (no ([c (THIS "Cat")])
+      (in c (join c (THIS "friends")))))
 (define fSymmetricFriendship
-  (= rFriends (~ rFriends)))
-
-; Universes
-; TODO type system w/ optimal bound semantics of 'one sig', 'extends', 'exactly'...
-(define uCat (build-list 4 (lambda (v) (gensym "Cat"))))
-(define uKittyBacon (list (first uCat)))
-(define U (universe (append uCat uKittyBacon)))
-; Bounds
-(define bCat (make-exact-bound rCat (map list uCat)))
-(define bKittyBacon (make-exact-bound rKittyBacon (map list uKittyBacon)))
-(define bFriends (make-product-bound rFriends uCat uCat))
-(define B (bounds U (list bCat bKittyBacon bFriends)))
-; Interpretations
-(define I (instantiate-bounds B))
-
-; Commands
-(define (RUN assume query verify/solve?)
-  (let* ([ocelot (if verify/solve? (=> assume query) (and assume query))]
-         [rosette (interpret* ocelot I)]
-         [cmd (assert rosette)]
-         [res (if verify/solve? (verify cmd) (solve cmd))])
-    (if (unsat? res) res (interpretation->relations (evaluate I res)))))
-(define (verifyISSUPERCONNECTED) (RUN (and fFriends
-                                           fKittyBacon
-                                           fNoFriendlessCats
-                                           fNoSelfFriendship
-                                           fSymmetricFriendship)
-                                      (not (ISSUPERCONNECTED))
-                                      #f))
+  (= (THIS "friends") (~ (THIS "friends"))))
 ; Models
-; TODO pretty printer
-(verifyISSUPERCONNECTED)
-
+(define (verifyISSUPERCONNECTED)
+  (declare-cmd (and fNoFriendlessCats
+                    fNoSelfFriendship
+                    fSymmetricFriendship
+                    (not (ISSUPERCONNECTED)))
+               #t))
