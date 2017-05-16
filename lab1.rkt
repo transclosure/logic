@@ -3,7 +3,7 @@
 
 ; Universe of Discourse
 (require "DISCOURSE.rkt")
-(declare-sig #t 4 "Cat")
+(declare-sig #t 5 "Cat")
 (declare-sig #t 1 "KittyBacon" "Cat")
 (declare-rel "Cat" 2 "friends")
 ; Functions / Predicates / Asserts
@@ -20,10 +20,9 @@
      (CONNECTIONSOF (THIS "KittyBacon"))))
 (define (SCONNECTED)
   (in (- (THIS "Cat") (THIS "KittyBacon"))
-     (join (THIS "KittyBacon") (^ (THIS "friends")))))
+      (join (THIS "KittyBacon") (^ (THIS "friends")))))
 (define (ISSUPERCONNECTED)
-  (and (=> (CONNECTED) (SCONNECTED))
-       (=> (SCONNECTED) (CONNECTED))))
+  (and (<=> (CONNECTED) (SCONNECTED))))
 ; Facts
 (define fNoFriendlessCats
   (no ([c (THIS "Cat")])
