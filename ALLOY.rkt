@@ -1,21 +1,27 @@
-#lang racket
+#lang rosette
+;; mandatory
+(require ocelot)
 (require redex/reduction-semantics)
+;; optional
 (require redex/pict)
+(require redex/gui)
 
 ;; taken from http://alloy.mit.edu/alloy/documentation/alloy4-grammar.txt
 ;; flagrant (essentially sugar) and pedantic (unhelpful disjunction) syntax are omitted
 ;; some useful but highly expressive syntax left out for now
 (define-language Alloy
+  (pSPEC ::= pALLOY pOCELOT)
+  (pOCELOT ::= string) ;TODO how to hook in ocelot syntax tree???
   ;; specification ::= [module] open* paragraph*
-  (spc ::= (par ...))
+  (pALLOY ::= (pPar ...+))
   ;; module ::= "module" name  [ "["  ["exactly"] name  ("," ["exactly"] num)*    "]" ]
   ;TODO(mod ::= ("module" nm  ["[" ["exactly"] nm ("," ["exactly"] num)* "]"]))
   ;; open ::= ["private"]  "open"  name  [ "[" ref,+ "]" ]  [ "as" name ]
   ;TODO(opn ::= (["private"] "open" nm ["["ref"]"] ["as" nm]))
   ;; paragraph ::= factDecl | assertDecl | funDecl | cmdDecl | enumDecl | sigDecl
-  (par ::= fact fun cmd sig)
+  (pPar ::= pFact pFunc pCmd pSig)
   ;; factDecl ::= "fact" [name] block
-  (fact ::= (fact nm blk))
+  (pFact ::= (fact pName)); blk))
   ;; assertDecl ::= "assert" [name] block
   ;TODO(asrt ::= ("assert" [nm] blk))
   ;; funDecl ::= ["private"] "fun" [ref "."] name "(" decl,* ")" ":" expr block
@@ -24,69 +30,91 @@
   ;; funDecl ::= ["private"] "pred" [ref "."] name "(" decl,* ")" block
   ;; funDecl ::= ["private"] "pred" [ref "."] name "[" decl,* "]" block
   ;; funDecl ::= ["private"] "pred" [ref "."] name                block
-  (fun ::= (fun nm (dcl ...) expr blk))
+  (pFunc ::= (func pName (pDecl ...) pExpr pBlock))
   ;; cmdDecl ::= [name ":"] ("run"|"check") (name|block) scope
-  (cmd ::= (cmd nm blk scp))
+  (pCmd ::= (cmd pName pBlock pScope))
   ;; scope ::= "for" number                   ["expect" (0|1)]
   ;; scope ::= "for" number "but" typescope,+ ["expect" (0|1)]
   ;; scope ::= "for"              typescope,+ ["expect" (0|1)]
   ;; scope ::=                                ["expect" (0|1)]
-  (scp ::= [natural (tscp ...)])
+  (pScope ::= (for integer (pScopeT ...)))
   ;; typescope ::= ["exactly"] number [name|"int"|"seq"]
-  (tscp ::= [exactly natural nm] [natural nm])
+  (pScopeT ::= (exactly integer pName) (integer pName))
   ;; enumDecl ::= "enum" name "{" name  ("," name)*  "}"
   ;TODO
   ;; sigDecl ::= sigQual* "sig" name,+ [sigExt] "{" decl,* "}" [block]
-  (sig ::= (sig (sigq ...) (nm ...) sigx (dcl ...)))
+  (pSig ::= (sig (pSigQ ...) (pName ...+) pSigX (pDecl ...)))
   ;; sigQual ::= "abstract" | "lone" | "one" | "some" | "private"
-  (sigq ::= abstract lone one some)
+  (pSigQ ::= abstract lone one some)
   ;; sigExt ::= "extends" ref
   ;; sigExt ::= "in" ref ["+" ref]*
-  (sigx ::= [extends rf])
+  (pSigX ::= (extends pRef))
   ;; expr ::= 
-  (expr ::= (let (ltd ...) blk) ;; | "let" letDecl,+ blockOrBar
-        (qnt (dcl ...) blk)     ;; | quant decl,+    blockOrBar
-        (uop expr)              ;; | unOp expr
-        (bop expr expr) ;; | expr binOp   expr
-        ;;       | expr ("=>"|"implies") expr "else" expr
-        ;;       | expr arrowOp expr
-        (cop expr expr) ;;       | expr ["!"|"not"] compareOp expr
-        ;;       | expr "[" expr,* "]"
-        natural  ;;       |     number
-        none ;;       | "none"
-        iden ;;       | "iden"
-        univ ;;       | "univ"
-        ;;       | "Int"
-        ;;       | "seq/Int"
-        (expr) ;;       | "(" expr ")"
-        ;;       | ["@"] name
-        blk  ;;       | block
-        ;;       | "{" decl,+ blockOrBar "}"
-        )
-  ;; decl ::= ["private"] ["disj"] name,+ ":" ["disj"] expr
-  (dcl ::= [(nm ...) expr])
-  ;; letDecl ::= name "=" expr
-  (ltd ::= [nm expr])
-  ;; quant ::= "all" | "no" | "some" | "lone" | "one" | "sum"
-  (qnt ::= all no some lone one)
-  ;; binOp ::= "||" | "or" | "&&" | "and" | "&" | "<=>" | "iff"
-  ;;        | "=>" | "implies" | "+" | "-" | "++" | "<:" | ":>" | "." | "<<" | ">>" | ">>>"
-  (bop ::= \| & => <=> + - \.)
-  ;; arrowOp ::= ["some"|"one"|"lone"|"set"] "->" ["some"|"one"|"lone"|"set"]
-  ;TODO
-  ;; compareOp ::= "=" | "in" | "<" | ">" | "=<" | ">="
-  (cop ::= = in < > =< >=)
-  ; unOp ::= "!" | "no" | "some" | "lone" | "one" | "set" | "seq" | "#" | "~" | "*" | "^"
-  (uop ::= ! no some lone one set \# ~ * ^)
+  (pExpr ::=
+         (let (ltd ...) pBlock)    ;; | "let" letDecl,+ blockOrBar
+         (pQuant (dcl ...) pBlock) ;; | quant decl,+    blockOrBar
+         (pUOP pExpr)              ;; | unOp expr
+         (pBOP pExpr pExpr)        ;; | expr binOp   expr
+         (pCOP pExpr pExpr)        ;; | expr ["!"|"not"] compareOp expr
+         integer                   ;; | number
+         none                      ;; | "none"
+         iden                      ;; | "iden"
+         univ                      ;; | "univ"
+         ;; | expr ("=>"|"implies") expr "else" expr
+         ;; | expr arrowOp expr
+         ;; | expr "[" expr,* "]"
+         ;; | "Int"
+         ;; | "seq/Int"
+         ;; | "(" expr ")"
+         ;; | ["@"] name
+         ;; | block
+         ;; | "{" decl,+ blockOrBar "}"
+         )
   ; block ::= "{" expr* "}"
   ; blockOrBar ::= block
   ; blockOrBar ::= "|" expr
-  (blk ::= (expr ...))
+  (pBlock ::= (pExpr ...))
+  ;; decl ::= ["private"] ["disj"] name,+ ":" ["disj"] expr
+  (pDecl ::= (pName pExpr))
+  ;; letDecl ::= name "=" expr
+  (pLet ::= (pName pExpr))
+  ;; quant ::= "all" | "no" | "some" | "lone" | "one" | "sum"
+  (pQuant ::= all no some lone one)
+  ;; binOp ::= "||" | "or" | "&&" | "and" | "&" | "<=>" | "iff"
+  ;;        | "=>" | "implies" | "+" | "-" | "++" | "<:" | ":>" | "." | "<<" | ">>" | ">>>"
+  (pBOP ::= \| & => <=> + - \.)
+  ;; arrowOp ::= ["some"|"one"|"lone"|"set"] "->" ["some"|"one"|"lone"|"set"]
+  ;TODO
+  ;; compareOp ::= "=" | "in" | "<" | ">" | "=<" | ">="
+  (pCOP ::= = in < > =< >=)
+  ; unOp ::= "!" | "no" | "some" | "lone" | "one" | "set" | "seq" | "#" | "~" | "*" | "^"
+  (pUOP ::= ! no some lone one set \# ~ * ^)
   ; name ::= ("this" | ID) ["/" ID]*
-  (nm ::= string)
+  (pName ::= string)
   ; ref ::= name | "univ" | "Int" | "seq/Int"
-  (rf ::= nm univ)
+  (pRef ::= pName univ)
   )
 (render-language Alloy)
+;TODO well-typed Alloy (define-judgements)
 
+;; Reductions (Surfae ALLOY --R-> Core ALLOY --F-> OCELOT)
+(define R
+  (reduction-relation
+   Alloy #:domain SPEC
+   (--> (pPar) (fPar pPar) isthisarbitrary)
+   ;   (--> (O V ...) (δ O V ...) δ) primitive case!!! (apply 2nd metafunc)
+   ;   (--> (if0 0 M_0 M_1) M_0 if0-t) trivial case!!! (no need to do prim op)
+   ))
 
+;; (meta)Functions (Core ALLOY --F-> OCELOT)
+(define-metafunction Alloy
+  [(rPar pFact) "fact"]
+  [(rPar pFunc) "func"]
+  [(rPar pCmd) "cmd"]
+  [(rPar pSig) "sig"])
+
+(traces R (term
+           ((rPar (fact "foo"))
+            (rPar (fact "bar"))
+            )
+           ))
