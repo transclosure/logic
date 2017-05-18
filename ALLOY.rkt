@@ -3,7 +3,7 @@
 (require redex/pict)
 
 ;; taken from http://alloy.mit.edu/alloy/documentation/alloy4-grammar.txt
-;; flagrant (essentially sugar) or pedantic (unhelpful disjunction) syntax is omitted
+;; flagrant (essentially sugar) and pedantic (unhelpful disjunction) syntax are omitted
 ;; some useful but highly expressive syntax left out for now
 (define-language Alloy
   ;; specification ::= [module] open* paragraph*
@@ -12,7 +12,7 @@
   ;TODO(mod ::= ("module" nm  ["[" ["exactly"] nm ("," ["exactly"] num)* "]"]))
   ;; open ::= ["private"]  "open"  name  [ "[" ref,+ "]" ]  [ "as" name ]
   ;TODO(opn ::= (["private"] "open" nm ["["ref"]"] ["as" nm]))
-  ;; paragraph ::= factDecl | assertDecl | funDecl | cmdDecl | enatDecl | sigDecl
+  ;; paragraph ::= factDecl | assertDecl | funDecl | cmdDecl | enumDecl | sigDecl
   (par ::= fact fun cmd sig)
   ;; factDecl ::= "fact" [name] block
   (fact ::= (fact nm blk))
@@ -31,9 +31,9 @@
   ;; scope ::= "for" number "but" typescope,+ ["expect" (0|1)]
   ;; scope ::= "for"              typescope,+ ["expect" (0|1)]
   ;; scope ::=                                ["expect" (0|1)]
-  (scp ::= [nat (tscp ...)])
+  (scp ::= [natural (tscp ...)])
   ;; typescope ::= ["exactly"] number [name|"int"|"seq"]
-  (tscp ::= [exactly nat nm] [nat nm])
+  (tscp ::= [exactly natural nm] [natural nm])
   ;; enumDecl ::= "enum" name "{" name  ("," name)*  "}"
   ;TODO
   ;; sigDecl ::= sigQual* "sig" name,+ [sigExt] "{" decl,* "}" [block]
@@ -43,30 +43,30 @@
   ;; sigExt ::= "extends" ref
   ;; sigExt ::= "in" ref ["+" ref]*
   (sigx ::= [extends rf])
-  ;; expr ::= "let" letDecl,+ blockOrBar
-  ;;       | quant decl,+    blockOrBar
-  ;;       | unOp expr
-  ;;       | expr binOp   expr
-  ;;       | expr arrowOp expr
-  ;;       | expr ["!"|"not"] compareOp expr
-  ;;       | expr ("=>"|"implies") expr "else" expr
-  ;;       | expr "[" expr,* "]"
-  ;;       |     number
-  ;;       | "-" number
-  ;;       | "none"
-  ;;       | "iden"
-  ;;       | "univ"
-  ;;       | "Int"
-  ;;       | "seq/Int"
-  ;;       | "(" expr ")"
-  ;;       | ["@"] name
-  ;;       | block
-  ;;       | "{" decl,+ blockOrBar "}"
-  ;TODO
+  ;; expr ::= 
+  (expr ::= (let (ltd ...) blk) ;; | "let" letDecl,+ blockOrBar
+        (qnt (dcl ...) blk)     ;; | quant decl,+    blockOrBar
+        (uop expr)              ;; | unOp expr
+        (bop expr expr) ;; | expr binOp   expr
+        ;;       | expr ("=>"|"implies") expr "else" expr
+        ;;       | expr arrowOp expr
+        (cop expr expr) ;;       | expr ["!"|"not"] compareOp expr
+        ;;       | expr "[" expr,* "]"
+        natural  ;;       |     number
+        none ;;       | "none"
+        iden ;;       | "iden"
+        univ ;;       | "univ"
+        ;;       | "Int"
+        ;;       | "seq/Int"
+        (expr) ;;       | "(" expr ")"
+        ;;       | ["@"] name
+        blk  ;;       | block
+        ;;       | "{" decl,+ blockOrBar "}"
+        )
   ;; decl ::= ["private"] ["disj"] name,+ ":" ["disj"] expr
   (dcl ::= [(nm ...) expr])
   ;; letDecl ::= name "=" expr
-  (let ::= [nm expr])
+  (ltd ::= [nm expr])
   ;; quant ::= "all" | "no" | "some" | "lone" | "one" | "sum"
   (qnt ::= all no some lone one)
   ;; binOp ::= "||" | "or" | "&&" | "and" | "&" | "<=>" | "iff"
