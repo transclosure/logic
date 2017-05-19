@@ -21,7 +21,7 @@
   ;; paragraph ::= factDecl | assertDecl | funDecl | cmdDecl | enumDecl | sigDecl
   (pPar ::= pFact pFunc pCmd pSig)
   ;; factDecl ::= "fact" [name] block
-  (pFact ::= (fact pName)); blk))
+  (pFact ::= (fact pName pBlock))
   ;; assertDecl ::= "assert" [name] block
   ;TODO(asrt ::= ("assert" [nm] blk))
   ;; funDecl ::= ["private"] "fun" [ref "."] name "(" decl,* ")" ":" expr block
@@ -43,33 +43,33 @@
   ;; enumDecl ::= "enum" name "{" name  ("," name)*  "}"
   ;TODO
   ;; sigDecl ::= sigQual* "sig" name,+ [sigExt] "{" decl,* "}" [block]
-  (pSig ::= (sig (pSigQ ...) (pName ...+) pSigX (pDecl ...)))
+  (pSig ::= (sig (pSigQ ...) (pName ...+) pSigX pBlock))
   ;; sigQual ::= "abstract" | "lone" | "one" | "some" | "private"
   (pSigQ ::= abstract lone one some)
   ;; sigExt ::= "extends" ref
   ;; sigExt ::= "in" ref ["+" ref]*
   (pSigX ::= (extends pRef))
   ;; expr ::= 
-  (pExpr ::=
-         (let (ltd ...) pBlock)    ;; | "let" letDecl,+ blockOrBar
-         (pQuant (dcl ...) pBlock) ;; | quant decl,+    blockOrBar
-         (pUOP pExpr)              ;; | unOp expr
-         (pBOP pExpr pExpr)        ;; | expr binOp   expr
-         (pCOP pExpr pExpr)        ;; | expr ["!"|"not"] compareOp expr
-         integer                   ;; | number
-         none                      ;; | "none"
-         iden                      ;; | "iden"
-         univ                      ;; | "univ"
-         ;; | expr ("=>"|"implies") expr "else" expr
-         ;; | expr arrowOp expr
-         ;; | expr "[" expr,* "]"
-         ;; | "Int"
-         ;; | "seq/Int"
-         ;; | "(" expr ")"
-         ;; | ["@"] name
-         ;; | block
-         ;; | "{" decl,+ blockOrBar "}"
-         )
+  (pExpr ::= string)
+  ;(let (ltd ...) pBlock)    ;; | "let" letDecl,+ blockOrBar
+  ;(pQuant (dcl ...) pBlock) ;; | quant decl,+    blockOrBar
+  ;(pUOP pExpr)              ;; | unOp expr
+  ; (pBOP pExpr pExpr)        ;; | expr binOp   expr
+  ; (pCOP pExpr pExpr)        ;; | expr ["!"|"not"] compareOp expr
+  ; integer                   ;; | number
+  ; none                      ;; | "none"
+  ; iden                      ;; | "iden"
+  ; univ                      ;; | "univ"
+  ;; | expr ("=>"|"implies") expr "else" expr
+  ;; | expr arrowOp expr
+  ;; | expr "[" expr,* "]"
+  ;; | "Int"
+  ;; | "seq/Int"
+  ;; | "(" expr ")"
+  ;; | ["@"] name
+  ;; | block
+  ;; | "{" decl,+ blockOrBar "}"
+  ;)
   ; block ::= "{" expr* "}"
   ; blockOrBar ::= block
   ; blockOrBar ::= "|" expr
@@ -97,24 +97,53 @@
 (render-language Alloy)
 ;TODO well-typed Alloy (define-judgements)
 
-;; Reductions (Surfae ALLOY --R-> Core ALLOY --F-> OCELOT)
+;; Reductions (Surface ALLOY --R-> Core ALLOY --F-> OCELOT)
 (define R
   (reduction-relation
    Alloy #:domain SPEC
-   (--> (pPar) (fPar pPar) isthisarbitrary)
-   ;   (--> (O V ...) (δ O V ...) δ) primitive case!!! (apply 2nd metafunc)
-   ;   (--> (if0 0 M_0 M_1) M_0 if0-t) trivial case!!! (no need to do prim op)
+   (--> pALLOY (rALLOY pALLOY) isthisarbitrary)
    ))
 
 ;; (meta)Functions (Core ALLOY --F-> OCELOT)
 (define-metafunction Alloy
-  [(rPar pFact) "fact"]
-  [(rPar pFunc) "func"]
-  [(rPar pCmd) "cmd"]
-  [(rPar pSig) "sig"])
+  rALLOY : any -> any
+  ((rALLOY (pPar ...)) ((rPar pPar) ...)))
+(define-metafunction Alloy
+  rPar : any -> any
+  ((rPar pFact) "fact")
+  ((rPar pFunc) "func")
+  ((rPar pCmd) "cmd")
+  ((rPar pSig) "sig"))
 
-(traces R (term
-           ((rPar (fact "foo"))
-            (rPar (fact "bar"))
-            )
-           ))
+;; test interactions
+(define test1 (lambda ()
+                (traces R (term (rALLOY
+                                 ((fact "foo" ("expr1"
+                                               "expr2"
+                                               "expr3"))
+                                  (fact "bar" ("exprA"))
+                                  (func "add1" (("x" "Int")
+                                                ("y" "Int"))
+                                        "expr1"
+                                        ())
+                                  ))))))
+(define test2 (lambda ()
+                (traces R (term (rALLOY
+                                 ((sig (abstract some) ("State") (extends univ)
+                                       ("expr1"
+                                        "expr2"
+                                        "expr3"))
+                                  (sig (one) ("StateA" "StateB" "StateC") (extends "State")
+                                       ())
+                                  ))))))
+(define test3 (lambda ()
+                (traces R (term (rALLOY
+                                 ((cmd "verifyTypeSoundness"
+                                       ("block1"
+                                        "block2"
+                                        "block3")
+                                       (for 7 ()))
+                                  (cmd "show" () (for 7 ((exactly 2 "Cat")
+                                                         (4 "Dog"))))
+                                  ))))))
+
