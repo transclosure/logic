@@ -2,12 +2,11 @@
 #|||||||||||||||||||||||||||||||||||||||
 | Alloy Compiler for Ocelot/Rosette/Z3 |
 |||||||||||||||||||||||||||||||||||||||#
-;; mandatory
-(require ocelot)
-(require redex/reduction-semantics)
-;; optional
-(require redex/pict)
-(require redex/gui)
+(require ocelot
+         redex/reduction-semantics
+         redex/pict
+         redex/gui)
+(provide )
 #|||||||||
 | Syntax |
 |||||||||#
@@ -33,9 +32,9 @@
   ;; funDecl ::= ["private"] "pred" [ref "."] name "(" decl,* ")" block
   ;; funDecl ::= ["private"] "pred" [ref "."] name "[" decl,* "]" block
   ;; funDecl ::= ["private"] "pred" [ref "."] name                block
-  (pFunc ::= (func pName (pDecl ...) pExpr pBlock))
+  (pFunc ::= (func pName pExpr (pDecl ...) pExpr))
   ;; cmdDecl ::= [name ":"] ("run"|"check") (name|block) scope
-  (pCmd ::= (cmd pName pBlock pScope))
+  (pCmd ::= (cmd pName pExpr pScope))
   ;; scope ::= "for" number                   ["expect" (0|1)]
   ;; scope ::= "for" number "but" typescope,+ ["expect" (0|1)]
   ;; scope ::= "for"              typescope,+ ["expect" (0|1)]
@@ -85,13 +84,13 @@
   (pQuant ::= all no some lone one)
   ;; binOp ::= "||" | "or" | "&&" | "and" | "&" | "<=>" | "iff"
   ;;        | "=>" | "implies" | "+" | "-" | "++" | "<:" | ":>" | "." | "<<" | ">>" | ">>>"
-  (pBOP ::= \| & => <=> + - \.)
+  (pBop ::= \| & => <=> + - \.)
   ;; arrowOp ::= ["some"|"one"|"lone"|"set"] "->" ["some"|"one"|"lone"|"set"]
   ;TODO
   ;; compareOp ::= "=" | "in" | "<" | ">" | "=<" | ">="
-  (pCOP ::= = in < > =< >=)
+  (pCop ::= = in < > =< >=)
   ; unOp ::= "!" | "no" | "some" | "lone" | "one" | "set" | "seq" | "#" | "~" | "*" | "^"
-  (pUOP ::= ! no some lone one set \# ~ * ^)
+  (pUop ::= ! no some lone one set \# ~ * ^)
   ; name ::= ("this" | ID) ["/" ID]*
   (pName ::= string)
   ; ref ::= name | "univ" | "Int" | "seq/Int"
@@ -122,38 +121,56 @@
   ((rALLOY (pPar ...)) ((rPar pPar) ...)))
 (define-metafunction ALLOY
   rPar : any -> any
-  ((rPar pFact) "fact")
-  ((rPar pFunc) "func")
-  ((rPar pCmd) "cmd")
-  ((rPar pSig) "sig"))
+  ((rPar pFact) (rFact pFact))
+  ((rPar pFunc) (rFunc pFunc))
+  ((rPar pCmd)  (rCmd pCmd))
+  ((rPar pSig)  (rSig pSig)))
+(define-metafunction ALLOY
+  rFact : any -> any
+  ((rFact (fact pName pBlock)) (define pName (rBlock pBlock))))
+;rfunc
+(define-metafunction ALLOY
+  rCmd : any -> any
+  ((rCmd (cmd pName pExpr pScope)) "TODO"))
+;rscope
+;rsig
+(define-metafunction ALLOY
+  rExpr : any -> any
+  ((rExpr pExpr) pExpr))
+(define-metafunction ALLOY
+  rBlock : any -> any
+  ((rBlock ()) #t)
+  ((rBlock (pExpr ...)) (and (rExpr pExpr) ...)))
+;rdecl
+;rlet
 #|||||||||||
 | Examples |
 |||||||||||#
 (define (trace spec) (traces R spec))
-(define x1 (term (rALLOY
-                  ((fact "foo" ("expr1"
-                                "expr2"
-                                "expr3"))
-                   (fact "bar" ("exprA"))
-                   (func "add1" (("x" "Int")
-                                 ("y" "Int"))
-                         "expr1"
-                         ())
-                   ))))
-(define x2 (term (rALLOY
-                  ((sig (abstract some) ("State") (extends univ)
-                        ("expr1"
-                         "expr2"
-                         "expr3"))
-                   (sig (one) ("StateA" "StateB" "StateC") (extends "State")
-                        ())
-                   ))))
-(define x3 (term (rALLOY
-                  ((cmd "verifyTypeSoundness"
-                        ("block1"
-                         "block2"
-                         "block3")
-                        (for 7 ()))
-                   (cmd "show" () (for 7 ((exactly 2 "Cat")
-                                          (4 "Dog"))))
-                   ))))
+(define (xfact) (term (rALLOY
+                       ((fact "factname1" ("conjunctexpr1"
+                                           "conjunctexpr2"
+                                           "conjunctexpr3"))
+                        (fact "factname2" ())
+                        ))))
+(define (xfunc) (term (rALLOY
+                       ((func "funcname" "outputtypeexpr" (("inputvar1" "typeexpr")
+                                                           ("inputvar2" "typeexpr"))
+                              "funcexpr")
+                        ))))
+(define (xsig) (term (rALLOY
+                      ((sig (abstract some) ("State") (extends univ)
+                            ("relationexpr1"
+                             "relationexpr2"
+                             "relationexpr3"))
+                       (sig (one) ("StateA" "StateB" "StateC") (extends "State") ())
+                       ))))
+(define (xcmd) (term (rALLOY
+                      ((cmd "cmdname"
+                            "cmdexpr"
+                            (for 7 ()))
+                       (cmd "show"
+                            "cmdexpr"
+                            (for 7 ((exactly 2 "Cat")
+                                    (4 "Dog"))))
+                       ))))

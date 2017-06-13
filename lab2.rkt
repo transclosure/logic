@@ -9,9 +9,9 @@
 (declare-sig #f 3 "State")
 (declare-rel "State" 2 "allocated")
 (declare-rel "State" 3 "references")
-(declare-sig #t 1 "StateA")
-(declare-sig #t 1 "StateB")
-(declare-sig #t 1 "StateC")
+(declare-sig #t 1 "StateA" "State")
+(declare-sig #t 1 "StateB" "State")
+(declare-sig #t 1 "StateC" "State")
 ; Functions / Predicates / Asserts
 (define (REFCOUNT state cell)
   (join (join state (THIS "references")) cell))
@@ -41,7 +41,7 @@
        (all ([cell (THIS "HeapCell")])
             (<=> (not (in cell (join (THIS "StateC")
                                      (THIS "allocated"))))
-                 (= (REFCOUNT (THIS "StateB") cell) 0)))))  
+                 (no (REFCOUNT (THIS "StateB") cell))))))
 ; Models
 (define (verifySOUNDNESS [query none])
   (declare-cmd (and fUnallocatedCantReference
