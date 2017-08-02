@@ -105,4 +105,13 @@
             `(,board-with-move ,@rest-of-solution))]))
   (step `("initial" ,board)))
 
-(search-for-solution (term initial-board))
+(define soln (search-for-solution (term initial-board)))
+
+(for-each (lambda (move)
+            (define board (rest (second move)))
+            (printf "~n~s~n~s~n~s~n"
+                    (first board) (second board) (third board))
+            (printf "~a move, gives control to ~a~n" (first move) (first (second move)))
+            )
+          soln)
+
