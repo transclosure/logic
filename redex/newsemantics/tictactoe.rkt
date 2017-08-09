@@ -61,7 +61,7 @@
           INDEX_3 ...
           INDEX_4
           INDEX_5 ...) (PLAYER ...) (O (PLACES_1 ...
-                                 (INDEX_2 INDEX_4 X))))
+                                        (INDEX_2 INDEX_4 X))))
         "next/move[p=X, r<c]"
         )
    (--> ((INDEX_1 ...
@@ -70,7 +70,7 @@
         ((INDEX_1 ...
           INDEX_2
           INDEX_3 ...) (PLAYER ...) (O (PLACES_1 ...
-                                 (INDEX_2 INDEX_2 X))))
+                                        (INDEX_2 INDEX_2 X))))
         "next/move[p=X, r=c]"
         )
    (--> ((INDEX_1 ...
@@ -83,7 +83,7 @@
           INDEX_3 ...
           INDEX_4
           INDEX_5 ...) (PLAYER ...) (O (PLACES_1 ...
-                                 (INDEX_4 INDEX_2 X))))
+                                        (INDEX_4 INDEX_2 X))))
         "next/move[p=X, r>c]"
         )
    ;; some p=turn=O, some r,c (enumerated), next/move(p, r, c)
@@ -97,7 +97,7 @@
           INDEX_3 ...
           INDEX_4
           INDEX_5 ...) (PLAYER ...) (X (PLACES_1 ...
-                                 (INDEX_2 INDEX_4 O))))
+                                        (INDEX_2 INDEX_4 O))))
         "next/move[p=O, r<c]"
         )
    (--> ((INDEX_1 ...
@@ -106,7 +106,7 @@
         ((INDEX_1 ...
           INDEX_2
           INDEX_3 ...) (PLAYER ...) (X (PLACES_1 ...
-                                 (INDEX_2 INDEX_2 O))))
+                                        (INDEX_2 INDEX_2 O))))
         "next/move[p=O, r=c]"
         )
    (--> ((INDEX_1 ...
@@ -119,7 +119,7 @@
           INDEX_3 ...
           INDEX_4
           INDEX_5 ...) (PLAYER ...) (X (PLACES_1 ...
-                                 (INDEX_4 INDEX_2 O))))
+                                        (INDEX_4 INDEX_2 O))))
         "next/move[p=O, r>c]"
         )
    ))
@@ -145,8 +145,10 @@
 
 ;; violates places: Index -> Index -> lone Player
 (define-term test/invalid ((1 2 3) (X O) (X ((3 3 X)
-                                             (3 3 X)))))
-(define-term initial ((1 2) (X O) (X ())))
+                                              (3 3 X)))))
+(define-term initial2x2 ((1 2) (X O) (X ())))
+(define-term initial3x3 ((1 2 3) (X O) (X ())))
+(define initial (term initial3x3))
 ;; run {} for 10 Board
 ;; undefined without multiple boards and equality
 #|(define-term RUN$1 ((1 2 3) (X O) ((X ())
@@ -162,17 +164,26 @@
 ;; even with pruning violating instances from further search steps, the search space is huge
 ;; quick for a 2x2 board (4 fanout, 4 deep)
 ;; takes forever on a 3x3 board (9 fanout, 9 deep)
-(define initials (list (list (term initial))))
+(define initials (list (list initial)))
+
+;; produce the entire feasible search space
 (define (search/constrain* instances)
   (define instances-prime (append* (map search/constrain (last instances))))
   (if (empty? instances-prime)
       instances
       (search/constrain* (append instances (list instances-prime)))))
+
+;; find a single feasible (possibly not satisfiable) instance
+(define (search/constrain+ instance)
+  (define instances-prime (search/constrain instance))
+  (if (empty? instances-prime)
+      instance
+      (search/constrain+ (car instances-prime))))
+
+;; reduce over T+, then filter infeasible paths
 (define (search/constrain instance)
   (filter (λ (i) (empty? (constrain i))) (search instance)))
 (define (search instance)
   (apply-reduction-relation TICTACTOE/T+ instance))
 (define (constrain instance)
   (apply-reduction-relation TICTACTOE/T- instance))
-
-
