@@ -212,7 +212,7 @@ e7exp
 | SVM-eqsue State Merging |
 ||||||||||||||||||||||||||#
 ;; original state machine
-(define SM (traces transition-implicit (term initial-state-implicit)))
+(define (SM) (traces transition-implicit (term initial-state-implicit)))
 ;; added formulae
 #|
 b1 = g1 | g2
