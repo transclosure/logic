@@ -193,3 +193,37 @@ e7exp
 
 (printf "Implicit liveness (false means pass): ~a~n" liveness-implicit)
 (printf "Explicit liveness (false means pass): ~a~n" liveness-explicit)
+
+#||||||||||||||||||||||||||
+| SVM-eqsue State Merging |
+||||||||||||||||||||||||||#
+;; original state machine
+(define SM (traces transition-implicit (term initial-state-implicit)))
+;; added formulae
+#|
+b1 = g1 | g2
+i1 = green | red
+i2 = red | green
+b1 = g1 ===> i1 = green & i2 = red
+b1 = g2 ===> i1 = red & i2 = green
+b2 = y1 | y2
+i3 = yellow | i1
+i4 = i2 | yellow
+b2 = y1 ===> i3 = yellow & i4 = i2
+b2 = y2 ===> i3 = i1 & i4 = yellow
+b3 = r1 | r2
+i5 = red | i3
+i6 = i4 | red
+b3 = r1 ===> i5 = red & i6 = i4
+b3 = r2 ===> i5 = i3 & i6 = red
+|#
+;; merged state machine
+#|
+(red red)
+   g1 -> (green red), g2 -> (red green)
+b1 -> (i1 i2)
+   y1 -> (yellow i2), y2 -> (i1 yellow)
+b2 -> (i3 i4)
+   r1 -> (red i4), r2 -> (i3 red)
+b3 -> (i5 i6)
+|#
