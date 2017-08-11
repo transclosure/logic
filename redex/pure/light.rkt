@@ -7,13 +7,15 @@
 ; Liveness property: neither direction is starved; each always eventually gets to go.
 ; Expect that both pass safety but implicit fails liveness. 
 
-#lang racket
+#lang rosette
 (require redex)
+(require rosette/query/debug
+         rosette/lib/render)
 
 (define-language lights 
   [light ::= red
-             yellow
-             green]
+         yellow
+         green]
   [intersection-implicit ::= (light light)]
   [direction ::= ns ew]
   [intersection-explicit ::= (light light direction)])
@@ -128,9 +130,21 @@ e7exp
 ; ^ note that this is only checking for reachability from START. 
 
 ; Check safety: every reachable state has >=1 light red:
+(define/debug (unsafe? t)
+  (not (or (symbol=? (first t) 'red)
+           (symbol=? (second t) 'red))))
+
 (define (safety reachable)
-  (andmap (lambda (t) (or (symbol=? (first t) 'red)
-                          (symbol=? (second t) 'red))) reachable-explicit))
+  (not (ormap unsafe? reachable)))
+
+(define (core phi t)
+  (assert (phi t)))
+
+(define (cores property reachable)
+  (map (lambda (t) (printf "~n~a~n~a~n" t (debug (boolean?) (core property t))))
+       reachable))
+
+(cores unsafe? reachable-implicit)
 
 (printf "Implicit safety (true means pass): ~a~n" (safety reachable-implicit))
 (printf "Explicit safety (true means pass): ~a~n" (safety reachable-explicit))
