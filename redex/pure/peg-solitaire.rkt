@@ -168,30 +168,30 @@ rosette hangs debugging this property...
     (string-length (~a (core phi board)))))
   
 (define (search-for-solution board avoiding?)
-  (define (step move/board)
-    (define (expand move/boards)
-      (append* (map (lambda (t) (apply-reduction-relation/tag-with-names move (second t)))
-                   move/boards)))
-    (define next-move/boards
-      (expand
-       (expand
-        (list move/board))))
-    (define next-core/move/boards
-      (filter (lambda (t) (positive? (first t)))
-              (map (lambda (t) (cons (core-weight avoiding? (second t)) t))
-                   next-move/boards)))
-    (cond
-      [(empty? next-core/move/boards)
-       (and (winning? (second move/board)) `(,move/board))]
-      [else
-       (define mincore
-         (first (argmin first next-core/move/boards)))
-       (printf "~a~n" mincore)
-       (define nextmin-move/boards
-         (map rest (filter (lambda (t) (= mincore (first t)))
-                           next-core/move/boards)))
-       (define rest-of-solution
-         (ormap step nextmin-move/boards))
-       (and rest-of-solution
-            `(,move/board ,@rest-of-solution))]))
-  (step `("initial" ,board)))
+  (define (step board)
+    (apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n" board))
+    (define (expand boards)
+      (append* (map (lambda (b) (begin
+                                  (define choices (apply-reduction-relation move b))
+                                  (if (empty? choices) b choices)))
+                    boards)))
+    (define next-boards
+      (expand (list board)))
+    (define next-weight/boards
+      (filter (lambda (w/b) (positive? (first w/b)))
+              (map (lambda (b) (cons (core-weight avoiding? b) b))
+                   next-boards)))
+    (cond ((empty? next-weight/boards)
+           (and (winning? board) (list board)))
+          (else
+           (define sorted-next-boards
+             (map rest (sort next-weight/boards
+                             (lambda (a b) (> (first a) (first b))))))
+           (define (dfs boards)
+             (cond ((empty? boards) false)
+                   (else
+                    (define next (step (first boards)))
+                    (cond ((false? next) (dfs (rest boards)))
+                          (else (cons board next))))))
+           (dfs sorted-next-boards))))
+  (step board))
