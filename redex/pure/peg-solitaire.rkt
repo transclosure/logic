@@ -1,7 +1,8 @@
 #lang rosette
 
 (require redex)
-(require rosette/query/debug)
+(require rosette/query/debug
+         rosette/lib/render)
 
 (define-language peg-solitaire
   [position ::= empty peg]
@@ -101,7 +102,7 @@
 ;; lots of ways to define unstuck, staying fairly propositionalized (more syntax more effect)
 ;; this is just defining winning as not losing, right?
 #|
-rosette hangs debugging this property
+rosette hangs debugging this property...
 
 (define/debug (notlost? board)
   (define/debug (somestuck? r c board)
@@ -124,7 +125,7 @@ rosette hangs debugging this property
           (else (somestuck? (+ r 1) c board))))
   (not (somestuck? 0 0 board)))
 |#
-(define (match-peg/neighbors board)
+(define (match-peg/neighbors* board)
   (redex-match peg-solitaire
                (side-condition (any_1
                                 ...
@@ -140,43 +141,57 @@ rosette hangs debugging this property
                                        (+ 1 (length (term (position_7 ...))))
                                        (length (term (position_10 ...))))))
                board))
-(define/debug (notlost? board)
-  (define/debug (stuck? bindings)
-    (define top (bind-exp (findf (lambda (abind) (equal? 'position_2 (bind-name abind))) bindings)))
-    (define left (bind-exp (findf (lambda (abind) (equal? 'position_5 (bind-name abind))) bindings)))
-    (define right (bind-exp (findf (lambda (abind) (equal? 'position_6 (bind-name abind))) bindings)))
-    (define bot (bind-exp (findf (lambda (abind) (equal? 'position_9 (bind-name abind))) bindings)))
-    (and
-     (or (equal? top '○) (equal? top '█))
-     (or (equal? left '○) (equal? left '█))
-     (or (equal? right '○) (equal? right '█))
-     (or (equal? bot '○) (equal? bot '█))))
-  (define/debug (somestuck? matches)
-    (cond ((empty? matches) false)
-          (else (or (stuck? (match-bindings (first matches)))
-                    (somestuck? (rest matches))))))
-  (not (somestuck? (match-peg/neighbors board))))
-                     
-(define (search-for-solution board maximizing)
+(define (peg/neighbors* board)
+  (define matches (match-peg/neighbors* board))
+  (map peg/neighbors matches))
+(define (peg/neighbors match)
+  (define bindings (match-bindings match))
+  (define top (bind-exp (findf (lambda (abind) (equal? 'position_2 (bind-name abind))) bindings)))
+  (define left (bind-exp (findf (lambda (abind) (equal? 'position_5 (bind-name abind))) bindings)))
+  (define right (bind-exp (findf (lambda (abind) (equal? 'position_6 (bind-name abind))) bindings)))
+  (define bot (bind-exp (findf (lambda (abind) (equal? 'position_9 (bind-name abind))) bindings)))
+  (list top left right bot))
+
+(define/debug (stuck? neighbors)
+  (and
+   (or (equal? (first neighbors) '○) (equal? (first neighbors) '█))
+   (or (equal? (second neighbors) '○) (equal? (second neighbors) '█))
+   (or (equal? (third neighbors) '○) (equal? (third neighbors) '█))
+   (or (equal? (fourth neighbors) '○) (equal? (fourth neighbors) '█))))
+(define/debug (lost? neighbors*)
+  (ormap stuck? neighbors*))
+
+(define (core phi board)
+  (debug (boolean? integer?) (assert (phi (peg/neighbors* board)))))
+(define (core-weight phi board)
+  (with-handlers ((exn:fail? (lambda (e) -1)))
+    (string-length (~a (core phi board)))))
+  
+(define (search-for-solution board avoiding?)
   (define (step move/board)
-    (match-define `(,_ ,board) move/board)
-    (define next-move/board
-      (apply-reduction-relation/tag-with-names move board))
+    (define (expand move/boards)
+      (append* (map (lambda (t) (apply-reduction-relation/tag-with-names move (second t)))
+                   move/boards)))
+    (define next-move/boards
+      (expand
+       (expand
+        (list move/board))))
+    (define next-core/move/boards
+      (filter (lambda (t) (positive? (first t)))
+              (map (lambda (t) (cons (core-weight avoiding? (second t)) t))
+                   next-move/boards)))
     (cond
-      [(empty? next-move/board)
-       (and (winning? board) `(,move/board))]
+      [(empty? next-core/move/boards)
+       (and (winning? (second move/board)) `(,move/board))]
       [else
-       (define (core phi t)
-         (debug (boolean? integer?) (assert (phi t))))
-       (define next-core/move/board
-         (map (lambda (t) (cons (string-length (~a (core maximizing (second t)))) t))
-              next-move/board))
-       (define mincore (first (argmin first next-core/move/board)))
-       (define nextmin-move/board
-         (map rest
-              (filter (lambda (t) (= mincore (first t))) next-core/move/board)))
+       (define mincore
+         (first (argmin first next-core/move/boards)))
+       (printf "~a~n" mincore)
+       (define nextmin-move/boards
+         (map rest (filter (lambda (t) (= mincore (first t)))
+                           next-core/move/boards)))
        (define rest-of-solution
-         (ormap step nextmin-move/board))
+         (ormap step nextmin-move/boards))
        (and rest-of-solution
             `(,move/board ,@rest-of-solution))]))
   (step `("initial" ,board)))
