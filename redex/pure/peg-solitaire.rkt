@@ -11,26 +11,22 @@
   [board ::= ([position ...] ...)])
 
 (define-term initial-board
-  ([█ █ █ █ █ █ █ █ █]
-   [█ █ █ ● ● ● █ █ █]
-   [█ █ █ ● ● ● █ █ █]
-   [█ ● ● ● ● ● ● ● █]
-   [█ ● ● ● ○ ● ● ● █]
-   [█ ● ● ● ● ● ● ● █]
-   [█ █ █ ● ● ● █ █ █]
-   [█ █ █ ● ● ● █ █ █]
-   [█ █ █ █ █ █ █ █ █]))
+  ([█ █ ● ● ● █ █]
+   [█ █ ● ● ● █ █]
+   [● ● ● ● ● ● ●]
+   [● ● ● ○ ● ● ●]
+   [● ● ● ● ● ● ●]
+   [█ █ ● ● ● █ █]
+   [█ █ ● ● ● █ █]))
 
 (define-term lost-board
-  ([█ █ █ █ █ █ █ █ █]
-   [█ █ █ ○ ○ ○ █ █ █]
-   [█ █ █ ○ ○ ○ █ █ █]
-   [█ ○ ○ ○ ● ○ ○ ○ █]
-   [█ ○ ○ ○ ○ ○ ○ ○ █]
-   [█ ○ ○ ○ ○ ○ ● ○ █]
-   [█ █ █ ○ ○ ○ █ █ █]
-   [█ █ █ ○ ○ ○ █ █ █]
-   [█ █ █ █ █ █ █ █ █]))
+  ([█ █ ○ ○ ○ █ █]
+   [█ █ ○ ○ ○ █ █]
+   [○ ○ ○ ● ○ ○ ○]
+   [○ ○ ○ ○ ○ ○ ○]
+   [○ ○ ○ ○ ○ ● ○]
+   [█ █ ○ ○ ○ █ █]
+   [█ █ ○ ○ ○ █ █]))
 
 (define move
   (reduction-relation
@@ -129,9 +125,9 @@ rosette hangs debugging this property...
   (redex-match peg-solitaire
                (side-condition (any_1
                                 ...
-                                (position_1 ...            position_2   position_3 ...)
-                                (position_4 ... position_5 peg          position_6 position_7 ...)
-                                (position_8 ...            position_9   position_10 ...)
+                                (position_1 ...            position_2            position_3 ...)
+                                (position_4 ... position_5 position_0 position_6 position_7 ...)
+                                (position_8 ...            position_9            position_10 ...)
                                 any_2
                                 ...)
                                (and (= (length (term (position_1 ...)))
@@ -146,20 +142,22 @@ rosette hangs debugging this property...
   (map peg/neighbors matches))
 (define (peg/neighbors match)
   (define bindings (match-bindings match))
+  (define peg (bind-exp (findf (lambda (abind) (equal? 'position_0 (bind-name abind))) bindings)))
   (define top (bind-exp (findf (lambda (abind) (equal? 'position_2 (bind-name abind))) bindings)))
   (define left (bind-exp (findf (lambda (abind) (equal? 'position_5 (bind-name abind))) bindings)))
   (define right (bind-exp (findf (lambda (abind) (equal? 'position_6 (bind-name abind))) bindings)))
   (define bot (bind-exp (findf (lambda (abind) (equal? 'position_9 (bind-name abind))) bindings)))
-  (list top left right bot))
+  (list peg top left right bot))
 
-(define/debug (stuck? neighbors)
+(define/debug (stuck? p/ns)
   (and
-   (or (equal? (first neighbors) '○) (equal? (first neighbors) '█))
-   (or (equal? (second neighbors) '○) (equal? (second neighbors) '█))
-   (or (equal? (third neighbors) '○) (equal? (third neighbors) '█))
-   (or (equal? (fourth neighbors) '○) (equal? (fourth neighbors) '█))))
-(define/debug (lost? neighbors*)
-  (ormap stuck? neighbors*))
+   (equal? (first p/ns) '●)
+   (or (equal? (second p/ns) '○) (equal? (second p/ns) '█))
+   (or (equal? (third p/ns) '○) (equal? (third p/ns) '█))
+   (or (equal? (fourth p/ns) '○) (equal? (fourth p/ns) '█))
+   (or (equal? (fifth p/ns) '○) (equal? (fifth p/ns) '█))))
+(define/debug (lost? p/ns*)
+  (ormap stuck? p/ns*))
 
 (define (core phi board)
   (debug (boolean? integer?) (assert (phi (peg/neighbors* board)))))
@@ -169,7 +167,7 @@ rosette hangs debugging this property...
   
 (define (search-for-solution board avoiding?)
   (define (step board)
-    (apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n" board))
+    (apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n" board))
     (define (expand boards)
       (append* (map (lambda (b) (begin
                                   (define choices (apply-reduction-relation move b))
