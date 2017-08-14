@@ -4,29 +4,58 @@
 (require rosette/query/debug
          rosette/lib/render)
 
+#|||||||||||
+| Language |
+|||||||||||#
+
 (define-language peg-solitaire
-  [position ::= empty peg]
-  [empty ::= █ ○]
-  [peg ::= ●]
-  [board ::= ([position ...] ...)])
+  (pos ::= █ ○ ●) 
+  (pos* ::= (pos ...))
+  (pos** ::= (pos* ...))
+  (board ::= pos**))
+
+;; redex doesnt have a function for gettings the terminals of a language?!
+(define terminals
+  (list '█ '○ '●))
+(define terminalw
+  (+ 1 (integer-sqrt (length terminals))))
+(define (terminal->bitvector t)
+  (integer->bitvector (index-of terminals t) (bitvector terminalw)))
+(define (bitvector->terminal b)
+  (first (list-tail terminals (bitvector->natural b))))
+
+#||||||||
+| Terms |
+||||||||#
 
 (define-term initial-board
-  ([█ █ ● ● ● █ █]
-   [█ █ ● ● ● █ █]
-   [● ● ● ● ● ● ●]
-   [● ● ● ○ ● ● ●]
-   [● ● ● ● ● ● ●]
-   [█ █ ● ● ● █ █]
-   [█ █ ● ● ● █ █]))
+  ((█ █ ● ● ● █ █)
+   (█ █ ● ● ● █ █)
+   (● ● ● ● ● ● ●)
+   (● ● ● ○ ● ● ●)
+   (● ● ● ● ● ● ●)
+   (█ █ ● ● ● █ █)
+   (█ █ ● ● ● █ █)))
 
 (define-term lost-board
-  ([█ █ ○ ○ ○ █ █]
-   [█ █ ○ ○ ○ █ █]
-   [○ ○ ○ ● ○ ○ ○]
-   [○ ○ ○ ○ ○ ○ ○]
-   [○ ○ ○ ○ ○ ● ○]
-   [█ █ ○ ○ ○ █ █]
-   [█ █ ○ ○ ○ █ █]))
+  ((█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)
+   (○ ○ ○ ● ○ ○ ○)
+   (○ ○ ○ ○ ○ ○ ○)
+   (○ ○ ○ ○ ○ ● ○)
+   (█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)))
+
+;; should be a single bitvector, no?
+;; need a way to generalize kleene* to bitvectors without losing list structure
+(define (board->bitvectors p**)
+  (map (lambda (p*) (map terminal->bitvector p*)) p**))
+(define (bitvectors->board b**)
+  (map (lambda (b*) (map bitvector->terminal b*)) b**))
+
+#|||||||||||||
+| Reductions |
+|||||||||||||#
 
 (define move
   (reduction-relation
@@ -34,56 +63,60 @@
    #:domain board
    (--> (any_1
          ...
-         [any_2 ... ● ● ○ any_3 ...]
+         (any_2 ... ● ● ○ any_3 ...)
          any_4
          ...)
         (any_1
          ...
-         [any_2 ... ○ ○ ● any_3 ...]
+         (any_2 ... ○ ○ ● any_3 ...)
          any_4
          ...)
         →)
    (--> (any_1
          ...
-         [any_2 ... ○ ● ● any_3 ...]
+         (any_2 ... ○ ● ● any_3 ...)
          any_4
          ...)
         (any_1
          ...
-         [any_2 ... ● ○ ○ any_3 ...]
+         (any_2 ... ● ○ ○ any_3 ...)
          any_4
          ...)
         ←)
    (--> (any_1
          ...
-         [any_2 ..._1 ● any_3 ...]
-         [any_4 ..._1 ● any_5 ...]
-         [any_6 ..._1 ○ any_7 ...]
+         (any_2 ..._1 ● any_3 ...)
+         (any_4 ..._1 ● any_5 ...)
+         (any_6 ..._1 ○ any_7 ...)
          any_8
          ...)
         (any_1
          ...
-         [any_2 ... ○ any_3 ...]
-         [any_4 ... ○ any_5 ...]
-         [any_6 ... ● any_7 ...]
+         (any_2 ... ○ any_3 ...)
+         (any_4 ... ○ any_5 ...)
+         (any_6 ... ● any_7 ...)
          any_8
          ...)
         ↓)
    (--> (any_1
          ...
-         [any_2 ..._1 ○ any_3 ...]
-         [any_4 ..._1 ● any_5 ...]
-         [any_6 ..._1 ● any_7 ...]
+         (any_2 ..._1 ○ any_3 ...)
+         (any_4 ..._1 ● any_5 ...)
+         (any_6 ..._1 ● any_7 ...)
          any_8
          ...)
         (any_1
          ...
-         [any_2 ... ● any_3 ...]
-         [any_4 ... ○ any_5 ...]
-         [any_6 ... ○ any_7 ...]
+         (any_2 ... ● any_3 ...)
+         (any_4 ... ○ any_5 ...)
+         (any_6 ... ○ any_7 ...)
          any_8
          ...)
         ↑)))
+
+#||||||||||||||||||
+| Term Properties |
+||||||||||||||||||#
 
 ;; every core is the same length for this winning? (only the peg count changes)
 ;; every move makes the same progress for board clearing...
@@ -97,56 +130,32 @@
 ;; aha! we want to maximize being unstuck (ability to progress to satisfy winning?)
 ;; lots of ways to define unstuck, staying fairly propositionalized (more syntax more effect)
 ;; this is just defining winning as not losing, right?
-#|
-rosette hangs debugging this property...
-
-(define/debug (notlost? board)
-  (define/debug (somestuck? r c board)
-    (define/debug (pegless? r c board)
-      (cond ((> r 0) (pegless? (- r 1) c (rest board)))
-            ((= r 0) (pegless? (- r 1) c (first board)))
-            ((> c 0) (pegless? r (- c 1) (rest board)))
-            ((= c 0) (pegless? r (- c 1) (first board)))
-            (else (not (equal? board '●)))))
-    (define/debug (lonely? r c board)
-      (and (pegless? (- r 1) c board)
-           (pegless? (+ r 1) c board)
-           (pegless? r (- c 1) board)
-           (pegless? r (+ c 1) board)))
-    (define/debug (stuck? r c board)
-      (and (not (pegless? r c board)) (lonely? r c board)))
-    (cond ((= r (length board)) (somestuck? 0 (+ c 1) board))
-          ((= c (length (first board))) false)
-          ((stuck? r c board) true)
-          (else (somestuck? (+ r 1) c board))))
-  (not (somestuck? 0 0 board)))
-|#
 (define (match-peg/neighbors* board)
   (redex-match peg-solitaire
                (side-condition (any_1
                                 ...
-                                (position_1 ...            position_2            position_3 ...)
-                                (position_4 ... position_5 position_0 position_6 position_7 ...)
-                                (position_8 ...            position_9            position_10 ...)
+                                (pos_1 ...            pos_2            pos_3 ...)
+                                (pos_4 ... pos_5 pos_0 pos_6 pos_7 ...)
+                                (pos_8 ...            pos_9            pos_10 ...)
                                 any_2
                                 ...)
-                               (and (= (length (term (position_1 ...)))
-                                       (+ (length (term (position_4 ...))) 1)
-                                       (length (term (position_8 ...))))
-                                    (= (length (term (position_3 ...)))
-                                       (+ 1 (length (term (position_7 ...))))
-                                       (length (term (position_10 ...))))))
+                               (and (= (length (term (pos_1 ...)))
+                                       (+ (length (term (pos_4 ...))) 1)
+                                       (length (term (pos_8 ...))))
+                                    (= (length (term (pos_3 ...)))
+                                       (+ 1 (length (term (pos_7 ...))))
+                                       (length (term (pos_10 ...))))))
                board))
 (define (peg/neighbors* board)
   (define matches (match-peg/neighbors* board))
   (map peg/neighbors matches))
 (define (peg/neighbors match)
   (define bindings (match-bindings match))
-  (define peg (bind-exp (findf (lambda (abind) (equal? 'position_0 (bind-name abind))) bindings)))
-  (define top (bind-exp (findf (lambda (abind) (equal? 'position_2 (bind-name abind))) bindings)))
-  (define left (bind-exp (findf (lambda (abind) (equal? 'position_5 (bind-name abind))) bindings)))
-  (define right (bind-exp (findf (lambda (abind) (equal? 'position_6 (bind-name abind))) bindings)))
-  (define bot (bind-exp (findf (lambda (abind) (equal? 'position_9 (bind-name abind))) bindings)))
+  (define peg (bind-exp (findf (lambda (abind) (equal? 'pos_0 (bind-name abind))) bindings)))
+  (define top (bind-exp (findf (lambda (abind) (equal? 'pos_2 (bind-name abind))) bindings)))
+  (define left (bind-exp (findf (lambda (abind) (equal? 'pos_5 (bind-name abind))) bindings)))
+  (define right (bind-exp (findf (lambda (abind) (equal? 'pos_6 (bind-name abind))) bindings)))
+  (define bot (bind-exp (findf (lambda (abind) (equal? 'pos_9 (bind-name abind))) bindings)))
   (list peg top left right bot))
 
 (define/debug (stuck? p/ns)
@@ -158,6 +167,10 @@ rosette hangs debugging this property...
    (or (equal? (fifth p/ns) '○) (equal? (fifth p/ns) '█))))
 (define/debug (lost? p/ns*)
   (ormap stuck? p/ns*))
+
+#||||||||||||||||||||||||||
+| Term Reduction Checking |
+||||||||||||||||||||||||||#
 
 (define (core phi board)
   (debug (boolean? integer?) (assert (phi (peg/neighbors* board)))))
