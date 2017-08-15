@@ -2,7 +2,8 @@
 
 (require redex)
 (require rosette/query/debug
-         rosette/lib/render)
+         rosette/lib/render
+         rosette/lib/synthax)
 
 #|||||||||||
 | Language |
@@ -22,7 +23,8 @@
 (define (terminal->bitvector t)
   (integer->bitvector (index-of terminals t) (bitvector terminalw)))
 (define (bitvector->terminal b)
-  (first (list-tail terminals (bitvector->natural b))))
+  (define tail (list-tail terminals (bitvector->natural b)))
+  (and (not (empty? tail)) (first tail)))
 
 #||||||||
 | Terms |
@@ -46,12 +48,31 @@
    (█ █ ○ ○ ○ █ █)
    (█ █ ○ ○ ○ █ █)))
 
+(define-term won-board
+  ((█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)
+   (○ ○ ○ ○ ○ ○ ○)
+   (○ ○ ○ ○ ○ ○ ○)
+   (○ ○ ○ ○ ○ ● ○)
+   (█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)))
+
 ;; should be a single bitvector, no?
 ;; need a way to generalize kleene* to bitvectors without losing list structure
-(define (board->bitvectors p**)
-  (map (lambda (p*) (map terminal->bitvector p*)) p**))
-(define (bitvectors->board b**)
-  (map (lambda (b*) (map bitvector->terminal b*)) b**))
+;; or using hardcoded constants for a 7x7 board?
+(define (board->bitvector p**)
+  (apply concat (map terminal->bitvector (flatten p**))))
+(define (b->b* b i)
+  (define j (+ (- i terminalw) 1))
+  (cond ((< j 0) empty)
+        (else (cons (extract i j b) (b->b* b (- j 1))))))
+(define (b*->p* b*)
+  (map bitvector->terminal b*))
+(define (p*->p** p* p**)
+  (cond ((empty? p*) p**)
+        (else (p*->p** (drop p* 7) (cons (reverse (take p* 7)) p**)))))
+(define (bitvector->board b)
+  (p*->p** (b*->p* (reverse (b->b* b (- (* (* 7 7) terminalw) 1)))) empty))
 
 #|||||||||||||
 | Reductions |
@@ -168,9 +189,23 @@
 (define/debug (lost? p/ns*)
   (ormap stuck? p/ns*))
 
+;; synthesize a rewrite of the term such that phi no longer fails
+;; minimize the edit distance between the boards (xor is close but order biased)
+(define (rewrite-bitvector b phi)
+  (define-symbolic bprime (bitvector (* (* 7 7) terminalw)))
+  (define sol (optimize #:minimize (list (bvxor b bprime))
+                        #:guarantee (assert (phi (bitvector->board bprime)))))
+  (evaluate bprime sol))
+(define (rewrite-board board phi)
+  (bitvector->board (rewrite-bitvector (board->bitvector board) phi)))
+
+(rewrite-board (term lost-board) winning?)
+(rewrite-board (term won-board) (lambda (b) (not (winning? b))))
+
 #||||||||||||||||||||||||||
 | Term Reduction Checking |
 ||||||||||||||||||||||||||#
+;; all of this is currently obsolete!!!
 
 (define (core phi board)
   (debug (boolean? integer?) (assert (phi (peg/neighbors* board)))))
