@@ -4,6 +4,7 @@
 (require rosette/query/debug
          rosette/lib/render
          rosette/lib/synthax)
+(current-bitwidth #f)
 
 #|||||||||||
 | Language |
@@ -11,11 +12,10 @@
 
 (define-language peg-solitaire
   (pos ::= █ ○ ●) 
-  (pos* ::= (pos ...))
-  (pos** ::= (pos* ...))
-  (board ::= pos**))
+  (board ::= ((pos ...) ...)))
 
 ;; redex doesnt have a function for gettings the terminals of a language?!
+;; !!!there has to be a more direct term to bitvector approach based on the grammar ordering
 (define terminals
   (list '█ '○ '●))
 (define terminalw
@@ -30,6 +30,21 @@
 | Terms |
 ||||||||#
 
+(define-synthax (a7x7board depth)
+  #:base (choose '○ '●)
+  #:else
+  `((█ █,(choose '○ '●),(choose '○ '●),(choose '○ '●)█ █)
+    (█ █,(choose '○ '●),(choose '○ '●),(choose '○ '●)█ █)
+    (,(choose '○ '●),(choose '○ '●),(choose '○ '●),(choose '○ '●)
+                    ,(choose '○ '●),(choose '○ '●),(choose '○ '●))
+    (,(choose '○ '●),(choose '○ '●),(choose '○ '●),(choose '○ '●)
+                    ,(choose '○ '●),(choose '○ '●),(choose '○ '●))
+    (,(choose '○ '●),(choose '○ '●),(choose '○ '●),(choose '○ '●)
+                    ,(choose '○ '●),(choose '○ '●),(choose '○ '●))
+    (█ █,(choose '○ '●),(choose '○ '●),(choose '○ '●)█ █)
+    (█ █,(choose '○ '●),(choose '○ '●),(choose '○ '●)█ █))
+  )
+           
 (define-term initial-board
   ((█ █ ● ● ● █ █)
    (█ █ ● ● ● █ █)
@@ -191,16 +206,22 @@
 
 ;; synthesize a rewrite of the term such that phi no longer fails
 ;; minimize the edit distance between the boards (xor is close but order biased)
-(define (rewrite-bitvector b phi)
+(define (rewrite-bitvector b phi?)
   (define-symbolic bprime (bitvector (* (* 7 7) terminalw)))
   (define sol (optimize #:minimize (list (bvxor b bprime))
-                        #:guarantee (assert (phi (bitvector->board bprime)))))
+                        #:guarantee (assert (phi? (bitvector->board bprime)))))
   (evaluate bprime sol))
-(define (rewrite-board board phi)
-  (bitvector->board (rewrite-bitvector (board->bitvector board) phi)))
+(define (write-board phi?)
+  (define newboard (a7x7board 1))
+  (define sol (optimize #:minimize empty
+                        #:guarantee (assert (phi? newboard))))
+  (evaluate newboard sol))
 
-(rewrite-board (term lost-board) winning?)
-(rewrite-board (term won-board) (lambda (b) (not (winning? b))))
+(bitvector->board (rewrite-bitvector (board->bitvector (term lost-board)) winning?))
+(bitvector->board (rewrite-bitvector (board->bitvector (term won-board))
+                                     (lambda (b) (not (winning? b)))))
+(write-board winning?)
+(write-board (lambda (b) (not (winning? b))))
 
 #||||||||||||||||||||||||||
 | Term Reduction Checking |
