@@ -217,11 +217,16 @@
                         #:guarantee (assert (phi? newboard))))
   (evaluate newboard sol))
 
-(bitvector->board (rewrite-bitvector (board->bitvector (term lost-board)) winning?))
-(bitvector->board (rewrite-bitvector (board->bitvector (term won-board))
-                                     (lambda (b) (not (winning? b)))))
-(write-board winning?)
-(write-board (lambda (b) (not (winning? b))))
+(apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n"
+                    (bitvector->board (rewrite-bitvector (board->bitvector (term lost-board))
+                                                         winning?))))
+(apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n"
+                    (bitvector->board (rewrite-bitvector (board->bitvector (term won-board))
+                                                         (lambda (b) (not (winning? b)))))))
+(apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n"
+                    (write-board winning?)))
+(apply printf (cons "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n"
+                    (write-board (lambda (b) (not (winning? b))))))
 
 #||||||||||||||||||||||||||
 | Term Reduction Checking |
