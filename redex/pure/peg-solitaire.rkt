@@ -48,6 +48,24 @@
    (█ █ ● ● ● █ █)
    (█ █ ● ● ● █ █)))
 
+(define-term mediumwin-board
+  ((█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)
+   (○ ● ● ○ ○ ● ○)
+   (○ ○ ○ ○ ○ ○ ●)
+   (○ ○ ○ ○ ● ● ○)
+   (█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)))
+
+(define-term easywin-board
+  ((█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)
+   (○ ○ ○ ○ ○ ● ○)
+   (○ ○ ○ ○ ○ ○ ●)
+   (○ ○ ○ ○ ● ● ○)
+   (█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)))
+
 (define-term oneplaytowin-board
   ((█ █ ○ ○ ○ █ █)
    (█ █ ○ ○ ○ █ █)
@@ -57,19 +75,19 @@
    (█ █ ○ ○ ○ █ █)
    (█ █ ○ ○ ○ █ █)))
 
-(define-term lost-board
-  ((█ █ ○ ○ ○ █ █)
-   (█ █ ○ ○ ○ █ █)
-   (○ ○ ○ ● ○ ○ ○)
-   (○ ○ ○ ○ ○ ○ ○)
-   (○ ○ ○ ○ ○ ● ○)
-   (█ █ ○ ○ ○ █ █)
-   (█ █ ○ ○ ○ █ █)))
-
 (define-term won-board
   ((█ █ ○ ○ ○ █ █)
    (█ █ ○ ○ ○ █ █)
    (○ ○ ○ ○ ○ ○ ○)
+   (○ ○ ○ ○ ○ ○ ○)
+   (○ ○ ○ ○ ○ ○ ●)
+   (█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)))
+
+(define-term lost-board
+  ((█ █ ○ ○ ○ █ █)
+   (█ █ ○ ○ ○ █ █)
+   (○ ○ ○ ● ○ ○ ○)
    (○ ○ ○ ○ ○ ○ ○)
    (○ ○ ○ ○ ○ ● ○)
    (█ █ ○ ○ ○ █ █)
@@ -223,28 +241,36 @@
 | Term Reduction Checking |
 ||||||||||||||||||||||||||#
 
-(define (solve/su board/su phi?)
-  (define sol (synthesize #:forall (list )
-                          #:guarantee (assert (phi? board/su))))
-  (and (not (unsat? sol)) (evaluate board/su sol)))
+(define (Ycombinator board)
+  (apply-reduction-relation move/su board))
+
+(define (Xcombinator boards)
+  (cond ((> (length boards) 1)
+         ;; instead of making the guard an arbitrary choose...
+         ;; can we make it a function representing the reduction choice made
+         (define-symbolic* b boolean?)
+         (if b (first boards) (Xcombinator (rest boards))))
+        (else (first boards))))
 
 (define (YXcombinator board)
-  ;; for some reason choose cannot be used in context of racket/apply (unfolding)
-  (define (chooseboard boards)
-    (cond ((equal? (length boards) 1) (first boards))
-          ;; instead of making the guard an arbitrary choose...
-          ;; can we make it a function representing the reduction choice made
-          (else (choose (first boards) (chooseboard (rest boards))))))
-  (chooseboard (map lift/board (apply-reduction-relation move/su (unlift/board board)))))
+  (Xcombinator (map lift/board (Ycombinator (unlift/board board)))))
 
-;; YXcombinator currently buggy after 1 step... two possible sources...
-;; 1. reduction relation for moving symbolic unions is flawed
-;; 2. (chooseboard boards) is not properly unioning all the possible boards
-;(define board0 (term initial-board))
-;(map lift/board (apply-reduction-relation move/su (unlift/board board0)))
-;(define board1 (YXcombinator board0))
-;(map lift/board (apply-reduction-relation move/su (unlift/board board1)))
-;(define board2 (YXcombinator board1))
-;(map lift/board (apply-reduction-relation move/su (unlift/board board2)))
+(define (solve/su board phi?)
+  (define sol (synthesize #:forall (list )
+                          #:guarantee (assert (phi? board))))
+  (and (not (unsat? sol)) (evaluate board sol)))
 
-(solve/su (YXcombinator (term oneplaytowin-board)) winning?)
+(define (search/su board phi?)
+  (define found? (solve/su board phi?))
+  (cond (found? (apply printf "~a~n~a~n~a~n~a~n~a~n~a~n~a~n~n~n" found?))
+        (else
+         (printf "~a~n" found?)
+         (search/su (YXcombinator board) phi?))))
+
+(search/su (term oneplaytowin-board) winning?)
+(search/su (term easywin-board) winning?)
+(search/su (term mediumwin-board) winning?)
+;; move/su currently does not check guard values in match, which allows unsound reduction
+;; unsound reductions are bloating search space, but rosette avoids unsound results when solving
+;; can't solve the following because it takes too long (search space, symbolic union size, search alg)
+;;(search/su (term initial-board) winning?)
