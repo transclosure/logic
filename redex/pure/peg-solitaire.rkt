@@ -17,7 +17,7 @@
 (define-extended-language peg-solitaire/su
   peg-solitaire
   (pos/su ::= ((any pos) ...))
-  (board/su ::= ((pos/su ...) ...)))
+  (board/su ::= (any ((pos/su ...) ...)) ((pos/su ...) ...)))
 
 ;; is there a better way to redex over rosette's symbolic unions?
 ;; i would hope we would just have to define some lifts of redex functions
@@ -29,23 +29,14 @@
   (map (lambda (p*) (map unlift/pos p*)) p**))
 
 (define (lift/pos p/su)
-  (cond ((<= (length p/su) 1) (first p/su))
+  (cond ((<= (length p/su) 1) (second (first p/su)))
         (else (apply union
                      (map (lambda (g.v) (cons (first g.v) (second g.v)))
                           p/su)))))
-(define (lift/board p**/su)
-  (define board (map (lambda (p*/su) (map lift/pos p*/su)) p**/su))
-  (define (and-l values)
-    (cond ((empty? values) #t)
-          (else (and (first values) (and-l (rest values))))))
-  (define guard (and-l (flatten
-                        (map (lambda (p*)
-                               (map (lambda (p)
-                                      (or (union? p) (first p))) p*)) board))))
-  (define value (map (lambda (p*)
-                       (map (lambda (p) (cond ((union? p) p)
-                                              (else (second p)))) p*)) board))
-  (list guard value))
+(define (lift/board guard.board)
+  (define guard (first guard.board))
+  (define board (map (lambda (p*/su) (map lift/pos p*/su)) (second guard.board)))
+  (list guard board))
 
 #||||||||
 | Terms |
@@ -180,15 +171,16 @@
                          any_4
                          ...)
                         (and (term any_101) (term any_102) (term any_103)))
-        (any_1
-         ...
-         (any_2 ...
-          (((and any_101 any_102 any_103) ○))
-          (((and any_101 any_102 any_103) ○))
-          (((and any_101 any_102 any_103) ●))
-          any_3 ...)
-         any_4
-         ...)
+        ((and any_101 any_102 any_103)
+         (any_1
+          ...
+          (any_2 ...
+           (any_11 ... (any_101 ○) any_12 ...)
+           (any_13 ... (any_102 ○) any_14 ...)
+           (any_15 ... (any_103 ●) any_16 ...)
+           any_3 ...)
+          any_4
+          ...))
         →)
    (--> (side-condition (any_1
                          ...
@@ -200,15 +192,16 @@
                          any_4
                          ...)
                         (and (term any_101) (term any_102) (term any_103))) 
-        (any_1
-         ...
-         (any_2 ...
-          (((and any_101 any_102 any_103) ●))
-          (((and any_101 any_102 any_103) ○))
-          (((and any_101 any_102 any_103) ○))
-          any_3 ...)
-         any_4
-         ...)
+        ((and any_101 any_102 any_103)
+         (any_1
+          ...
+          (any_2 ...
+           (any_11 ... (any_101 ●) any_12 ...)
+           (any_13 ... (any_102 ○) any_14 ...)
+           (any_15 ... (any_103 ○) any_16 ...)
+           any_3 ...)
+          any_4
+          ...))
         ←)
    (--> (side-condition (any_1
                          ...
@@ -218,13 +211,14 @@
                          any_8
                          ...)
                         (and (term any_101) (term any_102) (term any_103)))
-        (any_1
-         ...
-         (any_2 ... (((and any_101 any_102 any_103) ○)) any_3 ...)
-         (any_4 ... (((and any_101 any_102 any_103) ○)) any_5 ...)
-         (any_6 ... (((and any_101 any_102 any_103) ●)) any_7 ...)
-         any_8
-         ...)
+        ((and any_101 any_102 any_103)
+         (any_1
+          ...
+          (any_2 ... (any_11 ... (any_101 ○) any_12 ...) any_3 ...)
+          (any_4 ... (any_13 ... (any_102 ○) any_14 ...) any_5 ...)
+          (any_6 ... (any_15 ... (any_103 ●) any_16 ...) any_7 ...)
+          any_8
+          ...))
         ↓)
    (--> (side-condition (any_1
                          ...
@@ -234,13 +228,14 @@
                          any_8
                          ...)
                         (and (term any_101) (term any_102) (term any_103)))
-        (any_1
-         ...
-         (any_2 ... (((and any_101 any_102 any_103) ●)) any_3 ...)
-         (any_4 ... (((and any_101 any_102 any_103) ○)) any_5 ...)
-         (any_6 ... (((and any_101 any_102 any_103) ○)) any_7 ...)
-         any_8
-         ...)
+        ((and any_101 any_102 any_103)
+         (any_1
+          ...
+          (any_2 ... (any_11 ... (any_101 ●) any_12 ...) any_3 ...)
+          (any_4 ... (any_13 ... (any_102 ○) any_14 ...) any_5 ...)
+          (any_6 ... (any_15 ... (any_103 ○) any_16 ...) any_7 ...)
+          any_8
+          ...))
         ↑)
    ))
 
@@ -258,14 +253,20 @@
 ||||||||||||||||||||||||||#
 
 (define (Ycombinator board)
-  (apply-reduction-relation move/su (unlift/board board)))
+  (define value (unlift/board board))
+  ;(apply printf "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n" value)
+  (append (apply-reduction-relation move/su value)
+          (list (list #f value))))
 
+;; currently explores entire search space, use additional guards to navigate?
 (define (Xcombinator boards)
   (define board (lift/board (first boards)))
   (define guard (first board))
-  (define value (second board))
+  (define sol (solve (begin (clear-asserts!) (assert guard))))
+  (define value (evaluate (second board) sol))
   (cond ((> (length boards) 1)
          (define-symbolic* b boolean?)
+         ;; new guard expr not simplified???
          (if (and b guard) value (Xcombinator (rest boards))))
         (else value)))
 
@@ -278,10 +279,10 @@
   (and (not (unsat? sol)) (evaluate board sol)))
 
 (define (search/su board phi?)
-  (apply printf "~a~n~a~n~a~n~a~n~a~n~a~n~a~n" board)
   (define found? (solve/su board phi?))
-  (cond (found? (apply printf "~a~n~a~n~a~n~a~n~a~n~a~n~a~n~n~n" found?))
+  (cond (found? (apply printf "~n~a~n~a~n~a~n~a~n~a~n~a~n~a~n" found?))
         (else
+         (printf "~a~n" found?)
          (search/su (YXcombinator board) phi?))))
 
 ;(search/su (term oneplaytowin-board) winning?)
