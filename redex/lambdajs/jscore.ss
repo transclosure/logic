@@ -307,18 +307,8 @@
         eval-semantic-bomb
         "E-Eval")
    with
-   [(--> (σ (in-hole E e_1)) (σ (in-hole E e_2)))
-    (==> e_1 e_2)]))
-#|
-from redex changelog v6.4...
-* changed shortcuts in --> so that non-terminals are no
-    longer allowed for the names in the shortcut "parameters"
-
-    These shortcut names were never constrained to actually be
-    non-terminals, so this change is intended entirely to be
-    able to give a helpful error message in an attempt to avoid
-confusion
-|#
+   [(--> (σ (in-hole E expr1)) (σ (in-hole E expr2)))
+    (==> expr1 expr2)]))
 
 ;;----------------------------------------
 ;;error reductions:
@@ -392,8 +382,8 @@ confusion
         (err "Eval was called")
         "E-Eval")
    with
-   [(--> (σ (in-hole E e_1)) (σ (in-hole E e_2)))
-    (==> e_1 e_2)]
+   [(--> (σ (in-hole E expr1)) (σ (in-hole E expr2)))
+    (==> expr1 expr2)]
    ))
 
 ;;----------------------------------------
