@@ -61,8 +61,12 @@ The following is a *program* that produces all possible terms, with a simple pro
   (term undefined))
 (define (the-null)
   (term null))
+(define (the-true)
+  (term true))
+(define (the-false)
+  (term false))
 (define (a-prim)
-  (term ,(choose* (a-number) #t #f (the-undefined) (the-null))))
+  (term, (choose* (a-number) (the-true) (the-false) (the-undefined) (the-null))))
   
 ;;(val prim (ref loc)) ; a value is a primitive or a heap reference
 (define (a-val)
@@ -115,14 +119,19 @@ The following is a *program* that produces all possible terms, with a simple pro
                         (a-begin (- r 1))))))
   (a-e-limit 3)) ; AVOIDING arbitrary recursion depth
 
-(define (solve1)
+(define (synth-term phi?)
   (current-bitwidth #f)
   (clear-asserts!)
   ;; problem 1: this is a program that produces a term, not a declaration...
-  (define an-expr (a-e))
+  (define some-term (a-e))
   ;; problem 2: how do i state properties without a pattern variable / types to reference?!
-  (define sol (solve (assert #t)))
-  (and (unsat? sol) (evaluate an-expr sol)))
+  ;; problem 3: how does quantification work here?
+  (define sol (solve (assert (phi? some-term))))
+  (printf "~a~n" sol)
+  (and (not (unsat? sol)) (evaluate some-term sol)))
+
+(define (solve1) (synth-term (lambda (e) (number? e))))
+(define (solve2) (synth-term (lambda (e) (equal? (the-null) e))))
 
 #|
 SMT Term Generation
