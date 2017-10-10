@@ -243,3 +243,5 @@ This is better because it seperates the theory of TYPES and VALUES
 
 ;; PROBLEM: how do i say "some term" if i have no procedure to generate all terms, only a type spec?
 ;; if these TERM -> BOOL functions were declared in SMT, couldn't we just assert one and solve?
+;; MAJOR PROBLEM is TERM is not a defined sort (in rosette terms, solvable type)
+;; can't define these functions as symbolic functions (~> integer? boolean?) without that support
