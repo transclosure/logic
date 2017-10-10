@@ -42,8 +42,6 @@ Redex Checking
                               #:attempt-size my-attempt-size))
 
 #|
-Rosette Term Generation
-
 The following is a *program* that produces all possible terms, with a simple property
 |#
 
@@ -134,9 +132,114 @@ The following is a *program* that produces all possible terms, with a simple pro
 (define (solve2) (synth-term (lambda (e) (equal? (the-null) e))))
 
 #|
-SMT Term Generation
-
 The following is a *specification* of all possible terms, with a simple property
+
+Notice how this is basically the asserts defined in the program above
+This is better because it seperates the theory of TYPES and VALUES
 |#
 
-;; TODO
+;;(prim number #t #f undefined null) ; primitives: nums, AVOIDING strs, bools, undef, null
+(define (true? t) (and (boolean? t) t))
+(define (false? t) (and (boolean? t) (not t)))
+(define (symundefined? t) (eq? 'undefined t))
+(define (symnull? t) (eq? 'null t))
+(define (prim? t)
+  (or (number? t)
+      (true? t)
+      (false? t)
+      (symundefined? t)
+      (symnull? t)))
+
+;;(loc natural) ; a heap location
+(define (natural? t) (and (integer? t) (>= t 0)))
+(define (loc? t)
+  (natural? t))
+
+;;(val prim (ref loc)) ; a value is a primitive or a heap reference
+(define (ref.loc? t)
+  (define (symref? t) (eq? 'ref t))
+  ; QUESTION: what's the best way to encode "there are only 2 subterms in t"
+  ; don't want to get deep into the theory of lists (we shouldn't have to!), staying inductive
+  (and (symref? (first t))
+       (loc? (first (rest t)))
+       (empty? (rest (rest t)))))
+(define (val? t)
+  (or (prim? t)
+      (ref.loc? t)))
+
+;;(σ ((loc val) ...)) ; a heap
+(define (loc.val? t)
+  (define (symloc? t) (eq? 'loc t))
+  (and (symloc? (first t))
+       (val? (first (rest t)))
+       (empty? (rest (rest t)))))
+(define (σ? t)
+  (or (empty? t)
+      (and (loc.val? (first t))
+           (σ? (rest t))))) ;; skolem depth doing it's wonders here for handling ...
+
+;;(error (err val)) ; an error
+(define (err.val? t)
+  (define (symerr? t) (eq? 'err t))
+  (and (symerr? (first t))
+       (val? (first (rest t)))
+       (empty? (rest (rest t)))))
+(define (error? t)
+  (err.val? t))
+
+;;(not-bool loc number undefined null (ref loc)) ; For malformed "if" error AVOIDING strings
+(define (not-bool? t)
+  (or (loc? t)
+      (number? t)
+      (symundefined? t)
+      (symnull? t)
+      (ref.loc? t)))
+
+;;(not-ref loc prim) ; For malformed set! etc.
+(define (not-ref? t)
+  (or (loc? t)
+      (prim? t)))
+
+;;(e val error (set! e e) (alloc e) (deref e) (if e e e) (begin e e ...)) ; expressions(AVOIDING x)
+(define (set!? t)
+  (define (symset!? t) (eq? 'set! t))
+  (and (symset!? (first t))
+       (e? (first (rest t)))
+       (e? (first (rest (rest t))))
+       (empty? (rest (rest (rest t))))))
+(define (alloc? t)
+  (define (symalloc? t) (eq? 'alloc t))
+  (and (symalloc? (first t))
+       (e? (first (rest t)))
+       (empty? (rest (rest t)))))
+(define (deref? t)
+  (define (symderef? t) (eq? 'deref t))
+  (and (symderef? (first t))
+       (e? (first (rest t)))
+       (empty? (rest (rest t)))))
+(define (if? t)
+  (define (symif? t) (eq? 'if t))
+  (and (symif? (first t))
+       (e? (first (rest t)))
+       (e? (first (rest (rest t))))
+       (e? (first (rest (rest (rest t)))))
+       (empty? (rest (rest (rest (rest t)))))))
+(define (begin? t)
+  (define (symbegin? t) (eq? 'begin t))
+  (define (listofe? t) (or (empty? t)
+                           (and (e? (first t))
+                                (listofe? (rest t))))) ;; notice listof_ always takes the same form
+  (and (symbegin? (first t))
+       (e? (first (rest t)))
+       (listofe? (rest (rest t)))))
+(define (e? t)
+  (or (val? t)
+      (error? t)
+      (set!? t)
+      (alloc? t)
+      (deref? t)
+      (if? t)
+      (begin? t)))
+
+;; PROBLEM: how do i say "some term" if i have no procedure to generate all terms, only a type spec?
+;; if these TERM -> BOOL functions were declared in SMT, couldn't we just assert one and solve?
