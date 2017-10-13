@@ -1,3 +1,5 @@
+;; TERM SYNTHESIS USING ONLY DECLARE-DATATYPES
+
 ;; UNIVERSE:
 (declare-datatypes () (
   (LOC natural)
@@ -13,24 +15,7 @@
   (PROGRAM (program (expr E)))
   ))
 
-;; ASSERT:
-; (loc natural)
-;(assert (forall ((l LOC)) (is-natural l) ))
-; (prim number string #t #f undefined null)
-;(assert (forall ((p PRIM))
-;  (or 
-;    (is-number p)
-;    (is-string p)
-;    (is-t p)
-;    (is-f p)
-;    (is-undefined p)
-;    (is-null p))
-;  ))
-; (val prim (ref loc))
-;(assert (forall ((v VAL))
-;  (implies (is-ref v)
-;    (is-natural (ref_1 v)))
-;  ))
+;; INTERPRETATION: 
 
 ;; QUERY:
 (declare-const t (PROGRAM))
@@ -54,11 +39,6 @@
 (echo "")
 
 (assert (not (is-set (expr (as t PROGRAM)))))
-(check-sat)
-(get-model)
-(echo "")
-
-(assert (not (is-err (expr (as t PROGRAM)))))
 (check-sat)
 (get-model)
 (echo "")
