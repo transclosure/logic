@@ -15,7 +15,7 @@
   )))
 ; there is a bounded set of terms
 (declare-datatypes () (
-  (TERM T1 T2 T3 T4 T5 T6 T7 T8 T9)
+  (TERM T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12 T13)
   ))
 ; a term has a type
 (declare-fun typeof (TERM TYPE) Bool)
@@ -89,19 +89,126 @@
       (typeof st REF))
     )))
 ; (err val)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t ERR)
+    (exists ((st TERM)) (subterms t 1 st))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t ERR) (subterms t 1 st))
+    (typeof st VAL)
+    )))
 ; (set! e e)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t SET)
+    (exists ((st1 TERM) (st2 TERM)) 
+      (and 
+        (subterms t 1 st1)
+        (subterms t 2 st2)
+        ))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t SET) (subterms t 1 st))
+    (typeof st E)
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t SET) (subterms t 2 st))
+    (typeof st E)
+    )))
 ; (alloc e)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t ALLOC)
+    (exists ((st TERM)) (subterms t 1 st))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t ALLOC) (subterms t 1 st))
+    (typeof st E)
+    )))
 ; (deref e)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t DEREF)
+    (exists ((st TERM)) (subterms t 1 st))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t DEREF) (subterms t 1 st))
+    (typeof st E)
+    )))
 ; (if e e e)
-; (begin e e ...)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t IF)
+    (exists ((st1 TERM) (st2 TERM) (st3 TERM)) 
+      (and 
+        (subterms t 1 st1)
+        (subterms t 2 st2)
+        (subterms t 3 st3)
+        ))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t IF) (subterms t 1 st))
+    (typeof st E)
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t IF) (subterms t 2 st))
+    (typeof st E)
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t IF) (subterms t 3 st))
+    (typeof st E)
+    )))
+
 ; (e val err set! alloc dref if begin)
+(assert (forall ((t TERM))
+  (=> 
+    (typeof t E)
+    (exists ((st TERM)) (subterms t 1 st))
+    )))
+(assert (forall ((t TERM) (st TERM))
+  (=> 
+    (and (typeof t E) (subterms t 1 st))
+    (or 
+      (typeof st VAL)
+      (typeof st ERR)
+      (typeof st SET)
+      (typeof st ALLOC)
+      (typeof st DEREF)
+      (typeof st IF))
+      ;(typeof st BEGIN)) TODO!!!
+    )))
+; (begin e e ...)
+;(assert (forall ((t TERM))
+;  (=> 
+;    (typeof t BEGIN)
+;    (exists ((st1 TERM) (st2 (Array Int TERM)))
+;      (and 
+;        (subterms t 1 st1)
+;        (subterms t 2 st2)
+;        ))
+;    )))
+;(assert (forall ((t TERM) (st TERM))
+;  (=> 
+;    (and (typeof t BEGIN) (subterms t 1 st))
+;    (typeof st E)
+;    )))
+;(assert (forall ((t TERM) (st (Array Int TERM)))
+;  (=> 
+;    (and (typeof t BEGIN) (subterms t 2 st))
+;    (forall ((i Int)) (typeof (select st i) E))
+;    )))
 
 ;; QUERY:
-(declare-const someterm TERM)
-(assert (typeof someterm VAL))
-(assert (forall ((st TERM)) 
-  (=> (subterms someterm 1 st) (typeof st REF))
-  ))
-
+(declare-const ROOT TERM)
+(assert (typeof ROOT E))
 (check-sat)
 (get-model)
