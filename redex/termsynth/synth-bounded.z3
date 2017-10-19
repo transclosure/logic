@@ -11,7 +11,7 @@
     ; (val prim ref)
     VAL REF
     ; (e val err set! alloc dref if begin)
-    E ERR SET ALLOC DEREF IF BEGIN
+    E ERR SET ALLOC DEREF IF ;BEGIN
   )))
 ; there is a bounded set of terms
 (declare-datatypes () (
