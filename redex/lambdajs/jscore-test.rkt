@@ -211,20 +211,54 @@ SMT / Redex Testing
 ;; universe of termposition(int)->isconcretetype?(bool) functions with grammatical interpretations
 ;; TODO not hardcoded language
 (define (rosette-test)
+  ; settings
+  (current-bitwidth #f)
+  (clear-asserts!)
   ; generic interpretation of (,)
   (define-symbolic openparen? (~> integer? boolean?))
   (define-symbolic closeparen? (~> integer? boolean?))
-  ; generic interpretation of ... (fixed size of 1)
+  ; generic interpretation of ... (variable size of 3)
   (define (a/k-listof? a/k-t? i)
     (define-symbolic* k-listof integer?)
-    (cons (let* ((a/k-t (a/k-t? (+ i 1)))
-                 (a-t (car a/k-t))
-                 (k-t (cdr a/k-t)))
-            (and (openparen? i)
-               
-                 a-t
-                 (closeparen? (+ i 1 k-t))
-                 (= k-listof (+ 1 k-t 1))))
+    (define openparen1 (openparen? i))
+    (define a/k-t1 (a/k-t? (+ i 1)))
+    (define a-t1 (car a/k-t1))
+    (define k-t1 (cdr a/k-t1))
+    (define closeparen1 (closeparen? (+ i 1 k-t1)))
+    (define k-listof1 (= k-listof (+ 1 k-t1 1)))
+    (define openparen2 (openparen? (+ i 1 k-t1 1)))
+    (define a/k-t2 (a/k-t? (+ i 1 k-t1 1 1)))
+    (define a-t2 (car a/k-t2))
+    (define k-t2 (cdr a/k-t2))
+    (define closeparen2 (closeparen? (+ i 1 k-t1 1 1 k-t2)))
+    (define k-listof2 (= k-listof (+ 1 k-t1 1 1 k-t2 1)))
+    (define openparen3 (openparen? (+ i 1 k-t1 1 1 k-t2 1)))
+    (define a/k-t3 (a/k-t? (+ i 1 k-t1 1 1 k-t2 1 1)))
+    (define a-t3 (car a/k-t3))
+    (define k-t3 (cdr a/k-t3))
+    (define closeparen3 (closeparen? (+ i 1 k-t1 1 1 k-t2 1 1 k-t3)))
+    (define k-listof3 (= k-listof (+ 1 k-t1 1 1 k-t2 1 1 k-t3 1)))
+    (cons (or (and openparen1
+                   a-t1
+                   closeparen1
+                   k-listof1)
+              (and openparen1
+                   a-t1
+                   closeparen1
+                   openparen2
+                   a-t2
+                   closeparen2
+                   k-listof2)
+              (and openparen1
+                   a-t1
+                   closeparen1
+                   openparen2
+                   a-t2
+                   closeparen2
+                   openparen3
+                   a-t3
+                   closeparen3
+                   k-listof3))
           k-listof))
   ;(loc natural)
   (define-symbolic natural? (~> integer? boolean?))
@@ -301,13 +335,18 @@ SMT / Redex Testing
   ;   (label lbl e))
   ;   (break lbl e)
   ;((f g x y z) variable-not-otherwise-mentioned)
-  
-  ; test query
-  ;(current-bitwidth #f)
-  ;(clear-asserts!)
+  (define (lift i term sol)
+    (define (continue-lift v)
+      (lift (+ i 1) (append term `(,v)) sol))
+    (cond (((evaluate openparen? sol) i) (continue-lift '\())
+          (((evaluate closeparen? sol) i) (continue-lift '\)))
+          (((evaluate natural? sol) i) (continue-lift 'nat))
+          (((evaluate val? sol) i) (continue-lift `val))
+          (else term)))
   (define a/k-term (a/k-σ? 1))
   (define a-term (car a/k-term))
   (define k-term (cdr a/k-term))
   (define sol (solve (assert a-term)))
-  sol)
+  (printf "~a~n" sol)
+  (and (sat? sol) (lift 1 '() sol)))
 (rosette-test)
