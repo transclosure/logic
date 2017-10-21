@@ -1,4 +1,4 @@
-#lang racket
+#lang rosette/safe
 
 (require redex)
 (require "jscore.ss")
@@ -23,20 +23,6 @@ essence of javascript paper semantic bug
 ;; Without E-Break-Break, the term (label x (break y (break x 1))) gets stuck.
 (define (success) (test (label x (break y (break x "success"))) "success"))
 (define (failure) (BROKEN-test (label x (break y (break x "success"))) "success"))
-
-#|
-soundness
-|#
-(define (sound? p)
-  (or (not (well-formed? p))
-      (result? p)
-      (let ((results (apply-reduction-relation eval-lambdaJS-errors p)))
-        (and (= (length results) 1)
-             (well-formed? (first results))))))
-;; reduced term is a result:
-(define (result? p)
-  (or (redex-match lambdaJS error p)
-      (redex-match lambdaJS val (second p))))
 
 #|
 well-formedness
@@ -78,6 +64,8 @@ well-formedness
            (unique? (rest l)))))
 ;;check for free variables
 (define (free-vars-expr expr)
+  ;TODO
+  #|
   (match expr
     [(? symbol? id) (if (or (eq? id 'eval-semantic-bomb)
                             (eq? id 'undefined)
@@ -107,26 +95,35 @@ well-formedness
     [`(delete-field ,e1 ,e2) (append (free-vars-expr e1) (free-vars-expr e2))]
     [`(,e ...) (apply append (map free-vars-expr e))]
     [else '()]
-    ))
+|#
+  (list ))
 ;;the free variables in a store.
 (define (free-vars-store store)
   (apply append (map free-vars-expr (map second store))))
 ;;all object literals have unique names
 (define (obj-unique-names-expr? expr)
+  ;TODO
+  #|
   (match expr
     [`(object [,str ,e] ...) (and (unique? str) (all (map obj-unique-names-expr? e)))]
     [`(,e ...) (all (map obj-unique-names-expr? e))]
     [else #t]))
+|#
+  #t)
 (define (obj-unique-names-store? store)
   (all (map obj-unique-names-expr? (map second store))))
 ;;stuff to deal with refs being valid
 (define ((collect-invalid-refs storedomain) expr)
+  ;TODO
+  #|
   (match expr
     [`(ref ,loc) (if (memq loc storedomain)
                      '()
                      (list loc))]
     [`(,e ...) (apply append (map (collect-invalid-refs storedomain) e))]
     [else '()]))
+|#
+  (list ))
 ;;all refs in an expression are in the domain of the store
 (define ((valid-refs-expr? storedomain) expr)
   (= (length ((collect-invalid-refs storedomain) expr)) 0))
@@ -135,6 +132,8 @@ well-formedness
   (all (map (valid-refs-expr? (map first store)) (map second store))))
 ;;stuff to deal with breaks being valid
 (define ((collect-invalid-breaks curlabels) expr)
+  ;TODO
+  #|
   (match expr
     [`(break ,x ,e) (append (if (memq x curlabels) '() (list x))
                             ((collect-invalid-breaks curlabels) e))]
@@ -144,6 +143,8 @@ well-formedness
     [`(,e ...) (apply append (map (collect-invalid-breaks curlabels) e))]
     [else '()]
     ))
+|#
+  (list ))
 ;;all breaks in an expression are valid
 (define ((valid-breaks-expr? curlabels) expr)
   (= (length ((collect-invalid-breaks curlabels) expr)) 0))
@@ -178,7 +179,135 @@ well-formedness
   (foldl (lambda (x y) (and x y)) #t l))
 
 #|
-Testing 
+Pure Redex Testing
 |#
-(redex-check BROKEN-lambdaJS e (sound? (term (() e)))
-             #:prepare (lambda (t) (begin (printf "checking: ~a~n" t) t)))
+(define num-wellformed-inputs 0)
+(define (safety-debug? p)
+  (define (result? p)
+    (or (redex-match lambdaJS error p)
+        (redex-match lambdaJS val (second p))))
+  (if (not (well-formed? p))
+      #t ;;vacuously true
+      (begin
+        ;(print p) (display "\n")
+        (set! num-wellformed-inputs (+ num-wellformed-inputs 1))
+        (or (result? p) ;;either a result, or it reduces in 1 way to a well-formed result
+            (let ((results (apply-reduction-relation eval-lambdaJS-errors p)))
+              (and (= (length results) 1)
+                   (well-formed? (first results))))))))
+(define (redex-test attempts repeats)
+  (if (<= repeats 0) void
+      (begin
+        (set! num-wellformed-inputs 0)
+        (check-reduction-relation eval-lambdaJS-errors safety-debug? #:attempts attempts)
+        (display (format "Repeat -~a: Had ~a/~a well-formed inputs\n" 
+                         repeats num-wellformed-inputs (* 37 attempts)))
+        (redex-test (+ attempts 1) (- repeats 1)))))
+;(redex-test 1 10)
+
+#|
+SMT / Redex Testing
+|#
+;; universe of termposition(int)->isconcretetype?(bool) functions with grammatical interpretations
+;; TODO not hardcoded language
+(define (rosette-test)
+  ; generic interpretation of (,)
+  (define-symbolic openparen? (~> integer? boolean?))
+  (define-symbolic closeparen? (~> integer? boolean?))
+  ; generic interpretation of ... (fixed size of 1)
+  (define (a/k-listof? a/k-t? i)
+    (define-symbolic* k-listof integer?)
+    (cons (let* ((a/k-t (a/k-t? (+ i 1)))
+                 (a-t (car a/k-t))
+                 (k-t (cdr a/k-t)))
+            (and (openparen? i)
+               
+                 a-t
+                 (closeparen? (+ i 1 k-t))
+                 (= k-listof (+ 1 k-t 1))))
+          k-listof))
+  ;(loc natural)
+  (define-symbolic natural? (~> integer? boolean?))
+  (define (a/k-loc? i)
+    (define-symbolic k-loc integer?)
+    (cons (and (natural? i)
+               (= k-loc 1))
+          k-loc))
+  ;((val obj) prim (lambda (x ...) e) (ref loc) (object [string val] ...))
+  ; TODO not concrete!!!!
+  (define-symbolic val? (~> integer? boolean?)) 
+  ;(σ ((loc val) ...))
+  (define (a/k-loc.val? i)
+    (define-symbolic* k-loc.val integer?)
+    (cons (let* ((a/k-loc (a/k-loc? (+ i 1)))
+                 (a-loc (car a/k-loc))
+                 (k-loc (cdr a/k-loc)))
+            (and (openparen? i)
+                 a-loc
+                 (val? (+ i 1 k-loc))
+                 (closeparen? (+ i 1 k-loc 1))
+                 (= k-loc.val (+ 1 k-loc 1 1))))
+          k-loc.val))
+  (define (a/k-σ? i)
+    (define-symbolic* k-σ integer?)
+    (cons (let* ((a/k-listof-loc.val (a/k-listof? a/k-loc.val? (+ i 1)))
+                 (a-listof-loc.val (car a/k-listof-loc.val))
+                 (k-listof-loc.val (cdr a/k-listof-loc.val)))
+            (and (openparen? i)
+                 a-listof-loc.val
+                 (closeparen? (+ i 1 k-listof-loc.val))
+                 (= k-σ (+ 1 k-listof-loc.val 1))))
+          k-σ))
+  ;(prim number string #t #f undefined null)
+  ;(prim+prim-object prim (object [string prim+prim-object] ...))
+  ;(error (err val))
+  ;(prim+prim-object+error prim+prim-object error)
+  ;(prim+error prim error)
+  ;(not-object loc prim (lambda (x ...) e) (ref loc))
+  ;(not-string loc number #t #f undefined null (lambda (x ...) e) (ref loc) (object [string val] ...))
+  ;(not-lambda loc prim (ref loc) (object [string val] ...))
+  ;(not-ref loc prim (lambda (x ...) e) (object [string val] ...))
+  ;(not-bool loc number string undefined null (lambda (x ...) e) (ref loc) (object [string val] ...))
+  ;(op + string-+ 
+  ;    % - * / === ==
+  ;    < string-< 
+  ;    & \| ^ ~ << >> >>>
+  ;    to-integer to-uint-32 to-int-32
+  ;    = 
+  ;    typeof surface-typeof
+  ;    prim->number prim->string prim->bool
+  ;    has-own-prop?
+  ;    prim?)
+  ;(lbl x)
+  ;(e val
+  ;   error
+  ;   x 
+  ;   (op e ...)
+  ;   (e e ...)
+  ;   (let ([x e] ...) e)
+  ;   (set! e e) 
+  ;   (alloc e) 
+  ;   (deref e) 
+  ;   (object [string e] ...)
+  ;   (get-field e e) 
+  ;   (update-field e e e)
+  ;   (delete-field e e)
+  ;   (begin e e ...) 
+  ;   (if e e e)
+  ;   (while e e) 
+  ;   (try-catch e (lambda (x) e))
+  ;   (try-finally e e)
+  ;   (throw e)
+  ;   (label lbl e))
+  ;   (break lbl e)
+  ;((f g x y z) variable-not-otherwise-mentioned)
+  
+  ; test query
+  ;(current-bitwidth #f)
+  ;(clear-asserts!)
+  (define a/k-term (a/k-σ? 1))
+  (define a-term (car a/k-term))
+  (define k-term (cdr a/k-term))
+  (define sol (solve (assert a-term)))
+  sol)
+(rosette-test)
