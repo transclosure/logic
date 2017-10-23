@@ -16,6 +16,7 @@
                     (eval-lambdaJS-errors BROKEN-eval-lambdaJS-errors)
                     (eval-lambdaJS BROKEN-eval-lambdaJS)
                     ))
+(require rosette/solver/smt/z3)
 
 #|
 essence of javascript paper semantic bug
@@ -214,82 +215,68 @@ SMT / Redex Testing
   ; settings
   (current-bitwidth #f)
   (clear-asserts!)
-  ; generic interpretation of (,)
-  (define-symbolic openparen? (~> integer? boolean?))
-  (define-symbolic closeparen? (~> integer? boolean?))
-  ; generic interpretation of ... (variable size of 3)
-  (define (a/k-listof? a/k-t? i)
-    (define-symbolic* k-listof integer?)
-    (define openparen1 (openparen? i))
-    (define a/k-t1 (a/k-t? (+ i 1)))
-    (define a-t1 (car a/k-t1))
-    (define k-t1 (cdr a/k-t1))
-    (define closeparen1 (closeparen? (+ i 1 k-t1)))
-    (define k-listof1 (= k-listof (+ 1 k-t1 1)))
-    (define openparen2 (openparen? (+ i 1 k-t1 1)))
-    (define a/k-t2 (a/k-t? (+ i 1 k-t1 1 1)))
-    (define a-t2 (car a/k-t2))
-    (define k-t2 (cdr a/k-t2))
-    (define closeparen2 (closeparen? (+ i 1 k-t1 1 1 k-t2)))
-    (define k-listof2 (= k-listof (+ 1 k-t1 1 1 k-t2 1)))
-    (define openparen3 (openparen? (+ i 1 k-t1 1 1 k-t2 1)))
-    (define a/k-t3 (a/k-t? (+ i 1 k-t1 1 1 k-t2 1 1)))
-    (define a-t3 (car a/k-t3))
-    (define k-t3 (cdr a/k-t3))
-    (define closeparen3 (closeparen? (+ i 1 k-t1 1 1 k-t2 1 1 k-t3)))
-    (define k-listof3 (= k-listof (+ 1 k-t1 1 1 k-t2 1 1 k-t3 1)))
-    (cons (or (and openparen1
-                   a-t1
-                   closeparen1
-                   k-listof1)
-              (and openparen1
-                   a-t1
-                   closeparen1
-                   openparen2
-                   a-t2
-                   closeparen2
-                   k-listof2)
-              (and openparen1
-                   a-t1
-                   closeparen1
-                   openparen2
-                   a-t2
-                   closeparen2
-                   openparen3
-                   a-t3
-                   closeparen3
-                   k-listof3))
-          k-listof))
+  ; constants
+  (define-symbolic apos integer?)
+  ; terms have 1.variable size depending on subterms 2. a single concrete type
+  (define-symbolic sizeof (~> integer? integer?))
+  (define-symbolic typeof (~> integer? integer?))
+  (define Tnull 0)
+  ; generic interpretation of ...
+  (define Tlist 1)
+  (define (pos1 p) (+ p 1))
+  (define (pos2 p) (+ (pos1 p) (sizeof (pos1 p))))
+  (define (pos3 p) (+ (pos2 p) (sizeof (pos2 p))))
+  (define (listof? apos t?)
+    (or
+     ; size 0
+     (and (= (typeof apos) Tlist)
+          (= (sizeof apos) 1))
+     ; size 1
+     (and (= (typeof apos) Tlist)
+          (t? (pos1 apos))
+          (= (sizeof apos) (+ 1 (sizeof (pos1 apos)))))
+     ; size 2
+     (and (= (typeof apos) Tlist)
+          (t? (pos1 apos))
+          (t? (pos2 apos))
+          (= (sizeof apos) (+ 1 (sizeof (pos1 apos))
+                              (sizeof (pos2 apos)))))
+     ; size 3
+     (and (= (typeof apos) Tlist)
+          (t? (pos1 apos))
+          (t? (pos2 apos))
+          (t? (pos3 apos))
+          (= (sizeof apos) (+ 1 (sizeof (pos1 apos))
+                              (sizeof (pos2 apos))
+                              (sizeof (pos2 apos)))))))
   ;(loc natural)
-  (define-symbolic natural? (~> integer? boolean?))
-  (define (a/k-loc? i)
-    (define-symbolic k-loc integer?)
-    (cons (and (natural? i)
-               (= k-loc 1))
-          k-loc))
+  (define-symbolic loc? (~> integer? boolean?))
+  (define Tnatural 2)
+  (assert (forall (list apos)
+                  (<=> (loc? apos)
+                       (and (= (typeof apos) Tnatural)
+                            (= (sizeof apos) 1)))))
   ;((val obj) prim (lambda (x ...) e) (ref loc) (object [string val] ...))
   ; TODO not concrete!!!!
-  (define-symbolic val? (~> integer? boolean?)) 
+  (define-symbolic val? (~> integer? boolean?))
+  (define Tval 3)
+  (assert (forall (list apos)
+                  (<=> (val? apos)
+                       (and (= (typeof apos) Tval)
+                            (= (sizeof apos) 1)))))
   ;(σ ((loc val) ...))
-  (define (a/k-loc.val? i)
-    (define-symbolic* k-loc.val integer?)
-    (cons (let* ((a/k-loc (a/k-loc? i))
-                 (a-loc (car a/k-loc))
-                 (k-loc (cdr a/k-loc)))
-            (and a-loc
-                 (val? (+ i k-loc))
-                 (= k-loc.val (+ k-loc 1))))
-          k-loc.val))
-  (define (a/k-σ? i)
-    (define-symbolic* k-σ integer?)
-    (cons (let* ((a/k-listof-loc.val (a/k-listof? a/k-loc.val? (+ i 1)))
-                 (a-listof-loc.val (car a/k-listof-loc.val))
-                 (k-listof-loc.val (cdr a/k-listof-loc.val)))
-            (and (openparen? i)
-                 a-listof-loc.val
-                 (closeparen? (+ i 1 k-listof-loc.val))
-                 (= k-σ (+ 1 k-listof-loc.val 1))))
-          k-σ))
+  (define-symbolic loc.val? (~> integer? boolean?))
+  (assert (forall (list apos)
+                  (<=> (loc.val? apos)
+                       (and (= (typeof apos) Tlist)
+                            (loc? (pos1 apos))
+                            (val? (pos2 apos))
+                            (= (sizeof apos) (+ 1 (sizeof (pos1 apos))
+                                                (sizeof (pos2 apos))))))))
+  (define-symbolic σ? (~> integer? boolean?))
+  (assert (forall (list apos)
+                  (<=> (σ? apos)
+                       (listof? apos loc.val?))))
   ;(prim number string #t #f undefined null)
   ;(prim+prim-object prim (object [string prim+prim-object] ...))
   ;(error (err val))
@@ -333,28 +320,24 @@ SMT / Redex Testing
   ;   (label lbl e))
   ;   (break lbl e)
   ;((f g x y z) variable-not-otherwise-mentioned)
-  (define (racketify i)
-    (cond ((openparen? i)  '<)   
-          ((closeparen? i) '>)
-          ((natural? i)    'nat)
-          ((val? i)        'val)
-          (else            '?)))
-  (define racketify* (filter (lambda (t) (not (eq? '? t)))
-                             (map racketify '(1 2 3 4 5 6 7 8 9 10
-                                                11 12 13 14 15 16 17 18 19 20
-                                                21 22 23 24 25 26 27 28 29 30))))
-  (define a/k-term (a/k-σ? 1))
-  (define a-term (car a/k-term))
-  (define k-term (cdr a/k-term))
-  (define (disjoint-concrete-types)
-    (define-symbolic i integer?)
-    (forall (list i) (xor (openparen? i)
-                          (closeparen? i)
-                          (natural? i)
-                          (val? i))))
-  (define sol (solve (assert (and disjoint-concrete-types
-                                  a-term
-                                  (> (length racketify*) 10)))))            
+  ; term interpretation
+  (define rootpos 1)
+  (assert (forall (list apos)
+                  (<=> (< (sizeof rootpos) apos)
+                       (= (typeof apos) Tnull))))
+  (define (interpret-term)
+    (define termpos '(1 2 3 4 5 6 7 8 9 10))
+    (interpret (reverse (take termpos (sizeof rootpos))) '()))
+  (define (interpret pstack term)
+    (cond ((null? pstack) term)
+          ((= (typeof (first pstack)) Tlist)  `(listof,(sizeof (first pstack))))
+          ; (interpret (rest pstack) (cons (take term (sizeof (first pstack)))
+          ;                                (drop term (sizeof (first pstack))))))
+          ((= (typeof (first pstack)) Tnatural) (interpret (rest pstack) (cons 'natural term)))
+          ((= (typeof (first pstack)) Tval) (interpret (rest pstack) (cons 'val term)))))
+  ; query
+  (define sol (solve (assert (loc? rootpos))))
   (printf "~a~n" sol)
-  (and (sat? sol) (evaluate racketify* sol)))
+  (and (sat? sol) (evaluate (interpret-term) sol))
+  )
 (rosette-test)
