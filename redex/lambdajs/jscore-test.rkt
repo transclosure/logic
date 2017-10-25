@@ -1,4 +1,4 @@
-#lang rosette/safe
+#lang rosette
 
 (require redex)
 (require "jscore.ss")
@@ -65,7 +65,7 @@ well-formedness
            (unique? (rest l)))))
 ;;check for free variables
 (define (free-vars-expr expr)
-  ;TODO
+  ;TODO unsafe!
   #|
   (match expr
     [(? symbol? id) (if (or (eq? id 'eval-semantic-bomb)
@@ -103,7 +103,7 @@ well-formedness
   (apply append (map free-vars-expr (map second store))))
 ;;all object literals have unique names
 (define (obj-unique-names-expr? expr)
-  ;TODO
+  ;TODO unsafe!
   #|
   (match expr
     [`(object [,str ,e] ...) (and (unique? str) (all (map obj-unique-names-expr? e)))]
@@ -115,7 +115,7 @@ well-formedness
   (all (map obj-unique-names-expr? (map second store))))
 ;;stuff to deal with refs being valid
 (define ((collect-invalid-refs storedomain) expr)
-  ;TODO
+  ;TODO unsafe!
   #|
   (match expr
     [`(ref ,loc) (if (memq loc storedomain)
@@ -133,7 +133,7 @@ well-formedness
   (all (map (valid-refs-expr? (map first store)) (map second store))))
 ;;stuff to deal with breaks being valid
 (define ((collect-invalid-breaks curlabels) expr)
-  ;TODO
+  ;TODO unsafe!
   #|
   (match expr
     [`(break ,x ,e) (append (if (memq x curlabels) '() (list x))
@@ -209,13 +209,11 @@ Pure Redex Testing
 #|
 SMT / Redex Testing
 |#
-;; universe of termposition(int)->isconcretetype?(bool) functions with grammatical interpretations
-;; TODO not hardcoded language
 (define (rosette-test)
   ; settings
   (current-bitwidth #f)
   (clear-asserts!)
-  ; constants
+  ; quantification constants 
   (define-symbolic apos integer?)
   ; terms have 1.variable size depending on subterms 2. a single concrete type
   (define-symbolic sizeof (~> integer? integer?))
@@ -269,14 +267,19 @@ SMT / Redex Testing
   (assert (forall (list apos)
                   (<=> (loc.val? apos)
                        (and (= (typeof apos) Tlist)
-                            (loc? (pos1 apos))
-                            (val? (pos2 apos))
-                            (= (sizeof apos) (+ 1 (sizeof (pos1 apos))
-                                                (sizeof (pos2 apos))))))))
+                            ; rosette throws sat solution decoding error when using...
+                            ; ...apos instead of hardcoded values
+                            (loc? 2);(pos1 apos)
+                            (val? 3);(pos2 apos)
+                            (= (sizeof apos) (+ 1 (sizeof 2) (sizeof 3))))
+                       ;(sizeof (pos1 apos)) (sizeof (pos2 apos))
+                       )))
+  #|
   (define-symbolic σ? (~> integer? boolean?))
   (assert (forall (list apos)
                   (<=> (σ? apos)
                        (listof? apos loc.val?))))
+|#
   ;(prim number string #t #f undefined null)
   ;(prim+prim-object prim (object [string prim+prim-object] ...))
   ;(error (err val))
@@ -325,19 +328,24 @@ SMT / Redex Testing
   (assert (forall (list apos)
                   (<=> (< (sizeof rootpos) apos)
                        (= (typeof apos) Tnull))))
-  (define (interpret-term)
-    (define termpos '(1 2 3 4 5 6 7 8 9 10))
-    (interpret (reverse (take termpos (sizeof rootpos))) '()))
-  (define (interpret pstack term)
-    (cond ((null? pstack) term)
-          ((= (typeof (first pstack)) Tlist)  `(listof,(sizeof (first pstack))))
-          ; (interpret (rest pstack) (cons (take term (sizeof (first pstack)))
-          ;                                (drop term (sizeof (first pstack))))))
-          ((= (typeof (first pstack)) Tnatural) (interpret (rest pstack) (cons 'natural term)))
-          ((= (typeof (first pstack)) Tval) (interpret (rest pstack) (cons 'val term)))))
-  ; query
-  (define sol (solve (assert (loc? rootpos))))
+  (assert (> (sizeof rootpos) 0))
+  ; smt query
+  (define sol (solve (assert (loc.val? rootpos))))
   (printf "~a~n" sol)
-  (and (sat? sol) (evaluate (interpret-term) sol))
+  ; smt -> racket (unsafe)
+  (define (interpret-term sol)
+    (define (eval f v) ((hash-ref sol f) v))
+    (define (interpret sol pstack term)
+      (cond ((null? pstack) term)
+            ((= (eval typeof (first pstack)) Tlist)
+             (interpret sol (rest pstack) (cons (take term (- (eval sizeof (first pstack)) 1))
+                                                (drop term (- (eval sizeof (first pstack)) 1)))))
+            ((= (eval typeof (first pstack)) Tnatural)
+             (interpret sol (rest pstack) (cons 'natural term)))
+            ((= (eval typeof (first pstack)) Tval)
+             (interpret sol (rest pstack) (cons 'val term)))))
+    (define termpos '(1 2 3 4 5 6 7 8 9 10))
+    (interpret sol (reverse (take termpos (eval sizeof rootpos))) '()))
+  (and (sat? sol) (interpret-term (model sol)))
   )
 (rosette-test)
