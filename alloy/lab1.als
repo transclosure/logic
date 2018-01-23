@@ -13,7 +13,7 @@ check {IsSuperConnected} for exactly 3 Cat
 check {IsSuperConnected} for exactly 4 Cat
 check {IsSuperConnected} for exactly 5 Cat
 
-pred problem { KittyBacon.friends.friends.friends.friends not in KittyBacon.friends.friends.friends }
+pred problem { some KittyBacon.friends.friends.friends.friends }
 check { not problem implies IsSuperConnected } for exactly 5 Cat
 run { not problem implies IsSuperConnected } for exactly 5 Cat
 
