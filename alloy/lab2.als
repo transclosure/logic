@@ -20,14 +20,14 @@ pred sound { safe[StateA] => safe[StateC] }
 pred complete {clean[StateA] => clean[StateC]}
 check soundness { sound } for 4 Memory
 check completeness { complete } for 4 Memory
-// Problem A+B
+
+// Investigation A+B
 -- exploration
-check incompleteModels { complete } for 4 Memory
+run incompleteModels { not complete } for 4 Memory
 run completeModels { complete } for 4 Memory
 -- explanation
 pred reasonA { some s : State | some m : HeapCell - s.allocated | some s.references[m] }
 pred reasonB { some s : State | some m : HeapCell | m in m.^(s.references) }
-pred whyIncomplete { reasonA or reasonB }
 -- validation
-check noUnexplainedIncompleteModels { not whyIncomplete implies complete } for 4 Memory
-run someExplainedCompleteModels { not whyIncomplete and complete } for 4 Memory
+run noUnexplainedIncompleteModels { not (reasonA or reasonB) and not complete } for 4 Memory
+run someExplainedCompleteModels { not (reasonA or reasonB) and complete } for 4 Memory
