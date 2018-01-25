@@ -29,7 +29,7 @@ run validateReasonA { localFailure and not reasonA } for exactly 5 Cat
 run sanitycheckReasonA { not localFailure and not reasonA } for exactly 5 Cat
 -- Property B
 pred globalFailure {KittyBacon not in KittyBacon.connectionsOf}
-run globalFailsLocally {} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
+run globalFailsLocally {globalFailure} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
 run globalFailsGlobally {not globalFailure} for exactly 4 Cat
 pred reasonB { KittyBacon not in KittyBacon.friends }
 run validateReasonB { globalFailure and not reasonB } for exactly 5 Cat
