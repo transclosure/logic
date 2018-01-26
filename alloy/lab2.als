@@ -21,7 +21,7 @@ check soundness { sound } for 4 Memory
 check completeness { complete } for 4 Memory
 
 // Part 2 A+B
-pred property { not complete }
+pred property { clean[StateA] and not clean[StateC] }
 run propertyHolds { property } for 4 Memory
 run propertyFails { not property } for 4 Memory
 pred reasonA { some s : State | some m : HeapCell - s.allocated | some s.references[m] }
