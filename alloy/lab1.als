@@ -22,8 +22,8 @@ check {EqualConnected} for exactly 5 Cat
 pred localProperty {not EqualConnected}
 run localFailsLocally {localProperty} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
 run localFailsGlobally {
-	all c:Cat | c in KittyBacon.connectionsOf -- this is all provenance flipped Ls, what's the proof look like?   
 	localProperty
+	all c:Cat-KittyBacon | c in KittyBacon.connectionsOf
 } for exactly 5 Cat
 pred reasonA { some c:Cat | c in FFFF[KittyBacon] }
 check validateReasonA { localProperty iff reasonA } for exactly 4 Cat
