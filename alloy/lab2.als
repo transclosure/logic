@@ -21,12 +21,10 @@ check soundness { sound } for 4 Memory
 check completeness { complete } for 4 Memory
 
 // Part 2 A+B
-pred property { clean[StateA] and not clean[StateC] }
+pred property { not complete }
 run propertyHolds { property } for 4 Memory
 run propertyFails { not property } for 4 Memory
-pred reasonA { some s : State | some m : HeapCell - s.allocated | some s.references[m] }
-pred reasonB { some s : State | some m : HeapCell | m in m.^(s.references) and not stackReachable[m,s] }
-fact { not reasonA }
-fact { clean[StateA] }
-check validateReason { (not reasonB) iff complete } for 4 Memory
-//run sanitycheckReason { not property and not reasonA and not reasonB } for 4 Memory
+pred reasonA { some s : StateC | some m : HeapCell - s.allocated | some n : HeapCell | n in s.references[m] and not stackReachable[n,s] }
+pred reasonB { some s : StateB | some m : HeapCell | m in m.^(s.references) and not stackReachable[m,s] }
+pred reason { clean[StateA] and (reasonA or reasonB) }
+check validateReason { reason iff property } for 4 Memory

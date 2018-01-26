@@ -11,26 +11,26 @@ fun FFF[c:Cat]:set Cat {F[F[F[c]]]-F[F[c]]-F[c]-c}
 fun FFFF[c:Cat]:set Cat {F[F[F[F[c]]]]-F[F[F[c]]]-F[F[c]]-F[c]-c}
 fact { KittyBacon.connectionsOf = F[KittyBacon]+FF[KittyBacon]+FFF[KittyBacon] }
 
-pred SuperConnected {KittyBacon.connectionsOf - KittyBacon = KittyBacon.^friends - KittyBacon}
-check {SuperConnected} for exactly 3 Cat
-check {SuperConnected} for exactly 4 Cat
-check {SuperConnected} for exactly 5 Cat 
+pred Connected { Cat - KittyBacon = KittyBacon.connectionsOf }
+pred SuperConnected { Cat - KittyBacon in KittyBacon.^friends }
+pred EqualConnected {Connected iff SuperConnected}
+check {EqualConnected} for exactly 3 Cat
+check {EqualConnected} for exactly 4 Cat
+check {EqualConnected} for exactly 5 Cat 
 
-// Part 2
--- Property A
-pred localFailure {not SuperConnected}
-run localFailsLocally {localFailure} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
+// Part 2 A
+pred localProperty {not EqualConnected}
+run localFailsLocally {localProperty} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
 run localFailsGlobally {
-	no c:Cat | c not in KittyBacon.connectionsOf and c in KittyBacon.^friends - KittyBacon
-	localFailure
+	all c:Cat | c in KittyBacon.connectionsOf -- this is all provenance flipped Ls, what's the proof look like?   
+	localProperty
 } for exactly 5 Cat
 pred reasonA { some c:Cat | c in FFFF[KittyBacon] }
-run validateReasonA { localFailure and not reasonA } for exactly 5 Cat
-run sanitycheckReasonA { not localFailure and not reasonA } for exactly 5 Cat
--- Property B
-pred globalFailure {KittyBacon in KittyBacon.connectionsOf}
-run globalFailsLocally {not globalFailure} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
-run globalFailsGlobally {globalFailure} for exactly 4 Cat
+check validateReasonA { localProperty iff reasonA } for exactly 4 Cat
+
+// Part 2 B
+pred globalProperty {KittyBacon not in KittyBacon.connectionsOf}
+run globalFailsLocally {globalProperty} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
+run globalFailsGlobally {not globalProperty} for exactly 4 Cat
 pred reasonB { KittyBacon not in KittyBacon.friends }
-run validateReasonB { globalFailure and not reasonB } for exactly 5 Cat
-run sanitycheckReasonB { not globalFailure and not reasonB } for exactly 5 Cat
+check validateReasonB { globalProperty iff reasonB } for exactly 4 Cat
