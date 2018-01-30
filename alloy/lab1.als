@@ -11,15 +11,15 @@ fun FFF[c:Cat]:set Cat {F[F[F[c]]]-F[F[c]]-F[c]-c}
 fun FFFF[c:Cat]:set Cat {F[F[F[F[c]]]]-F[F[F[c]]]-F[F[c]]-F[c]-c}
 fact { KittyBacon.connectionsOf = F[KittyBacon]+FF[KittyBacon]+FFF[KittyBacon] }
 
-pred Connected { Cat - KittyBacon = KittyBacon.connectionsOf }
+pred ConnectedKittyBacon { Cat - KittyBacon = KittyBacon.connectionsOf }
 pred SuperConnected { Cat - KittyBacon in KittyBacon.^friends }
-pred EqualConnected {Connected iff SuperConnected}
-check {EqualConnected} for exactly 3 Cat
-check {EqualConnected} for exactly 4 Cat
-check {EqualConnected} for exactly 5 Cat 
+pred ConnectedKittyBacon_equals_SuperConnected {ConnectedKittyBacon iff SuperConnected}
+check {ConnectedKittyBacon_equals_SuperConnected} for exactly 3 Cat
+check {ConnectedKittyBacon_equals_SuperConnected} for exactly 4 Cat
+check {ConnectedKittyBacon_equals_SuperConnected} for exactly 5 Cat 
 
 // Part 2 A
-pred localProperty {not EqualConnected}
+pred localProperty {not ConnectedKittyBacon_equals_SuperConnected}
 run localFailsLocally {localProperty} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
 run localFailsGlobally {
 	localProperty
