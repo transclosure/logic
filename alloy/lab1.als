@@ -19,12 +19,10 @@ check {ConnectedKittyBacon_equals_SuperConnected} for exactly 5 Cat
 // Part 2 A
 pred localProperty {not ConnectedKittyBacon_equals_SuperConnected}
 run localFailsLocally {localProperty} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
-run localFailsGlobally {
-	localProperty
-	all c:Cat-KittyBacon | c in KittyBacon.connectionsOf
-} for exactly 5 Cat
+pred inexactReason { some c:Cat-KittyBacon | c not in KittyBacon.connectionsOf }
+run localFailsGlobally { localProperty and not inexactReason } for exactly 5 Cat
 pred reasonA { some c:Cat | c in KittyBacon.friends.friends.friends.friends }
-check validateReasonA { localProperty implies reasonA } for exactly 4 Cat
+check validateReasonA { localProperty implies reasonA } for exactly 5 Cat
 
 // Part 2 B
 pred globalProperty {KittyBacon not in KittyBacon.connectionsOf}
