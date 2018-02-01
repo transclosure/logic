@@ -17,16 +17,27 @@ check {ConnectedKittyBacon_equals_SuperConnected} for exactly 4 Cat
 check {ConnectedKittyBacon_equals_SuperConnected} for exactly 5 Cat 
 
 // Part 2 A
-pred localProperty {not ConnectedKittyBacon_equals_SuperConnected}
-run localFailsLocally {localProperty} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
+pred failurePropertyA {not ConnectedKittyBacon_equals_SuperConnected}
+-- strategy A
 pred inexactReason { some c:Cat-KittyBacon | c not in KittyBacon.connectionsOf }
-run localFailsGlobally { localProperty and not inexactReason } for exactly 5 Cat
-pred reasonA { some c:Cat | c in KittyBacon.friends.friends.friends.friends }
-check validateReasonA { localProperty implies reasonA } for exactly 5 Cat
+run AFailsGlobally { failurePropertyA and not inexactReason } for exactly 5 Cat
+-- strategy B
+run AFailsLocally {failurePropertyA} for exactly 5 Cat -- why c not in KittyBacon.connectionsOf?
+-- task / validation
+pred reasonA { some c: Cat | {
+	c not in KittyBacon.friends +
+             KittyBacon.friends.friends +
+             KittyBacon.friends.friends.friends
+    c in KittyBacon.friends.friends.friends.friends
+}}
+check validateReasonA { failurePropertyA iff reasonA } for exactly 5 Cat
 
 // Part 2 B
-pred globalProperty {KittyBacon not in KittyBacon.connectionsOf}
-run globalFailsLocally {globalProperty} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
-run globalFailsGlobally {not globalProperty} for exactly 4 Cat
+pred failurePropertyB {KittyBacon not in KittyBacon.connectionsOf}
+-- strategy A
+run BFailsGlobally {not failurePropertyB} for exactly 4 Cat
+-- strategy B
+run BFailsLocally {failurePropertyB} for exactly 4 Cat -- why KittyBacon not in KittyBacon.connectionsOf?
+-- task / validation
 pred reasonB { KittyBacon not in KittyBacon.friends }
-check validateReasonB { globalProperty iff reasonB } for exactly 4 Cat
+check validateReasonB { failurePropertyB iff reasonB } for exactly 4 Cat
