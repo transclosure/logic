@@ -1,80 +1,67 @@
-// State
 open util/ordering[Board]
+// State
 abstract sig Player {}
-one sig One, Two extends Player {}
+one sig P1, P2 extends Player {}
+abstract sig Dimension {}
+sig Row, Col extends Dimension {}
 abstract sig Board {
-  rows   : one Int,
-  cols   : one Int,
-  turn : one Player
-} { rows >= 0 and cols >= 0 }
-sig PlayableBoard extends Board {
-} { this != last and rows > 0 and cols > 0 }
-sig UnplayableBoard extends Board {
-} { this.next in UnplayableBoard and rows = 0 or cols = 0 }
-// Transitions
-abstract sig DimensionChoice {}
-one sig Row, Col extends DimensionChoice {}
-sig Move {
-  choiced: DimensionChoice,
-  choicen: Int, // size, not offsett
-  before, after : Board 
-}{	-- If the player picks a row:
-	choiced = Row implies {
-		before.rows > choicen
-    	before.cols = after.cols
-    	after.rows = choicen
-  	}
-  	-- If the player picks a column:
-  	choiced = Col implies {
-    	before.cols > choicen
-    	before.rows = after.rows
-    	after.cols = choicen
-  	}
-  	-- Alternating moves
-  	before.turn != after.turn
+  rows : set Row,
+  cols : set Col,
+  turn : one Player,
+  move : set Dimension
 }
 fact StartingBoard {
-  first.turn = One
-  first.rows > 0
-  first.cols > 0
+  first.turn = P1
+  some first.rows
+  some first.cols
 }
-fact Progress { all board : Board - last | some m : Move | { 
-	m.before = board
- 	m.after = board.next 
+fact OneDimensionalMoves { all b:Board | b.move in b.rows or b.move in b.cols }
+fact ForceMoves { all b:Board | (some b.rows or some b.cols) implies some b.move } 
+fact MoveUpdate { all b:Board | {
+	b.next.rows = b.rows - b.move
+    b.next.cols = b.cols - b.move
 }}
-pred winner[p: Player] { some winning: Move | {
-    winning.before in PlayableBoard
-    winning.after in UnplayableBoard
-    winning.before.turn != p
+fact AlternatingMoves { all b:Board | b.next.turn != b.turn }
+pred losing[b: Board] {
+	some b.rows and some b.cols
+	no b.next.rows or no b.next.cols
+}
+pred winner[p: Player] { some b: Board | {
+    losing[b]
+    b.turn != p
 }}
 // Sanity Checks
-pred twoCanWin { winner[Two] }
-run twoCanWin for 6 Board, 5 Move, 5 Int
-pred canFinishEarly { #(UnplayableBoard) > 1 }
-run canFinishEarly for 6 Board, 5 Move, 5 Int
+pred oneCanWin { winner[P1] }
+run oneCanWin for 6 Board, 4 Row, 4 Col, 4 Int
+pred twoCanWin { winner[P2] }
+run twoCanWin for 6 Board, 4 Row, 4 Col, 4 Int
+assert onlyOneCanWin { not winner[P1] or not winner[P2] }
+check onlyOneCanWin for 6 Board, 4 Row, 4 Col, 4 Int
 // Winning Strategy
--- works as long as the board is not square
-pred WeakPlayerOneStrategy { all m:Move | m.before.turn = One implies {
-	m.before.rows > m.before.cols implies {
-		m.choiced = Row
-		m.choicen = m.before.cols
+-- square board implies nothing
+pred WeakP1Strategy { all b:Board | b.turn = P1 implies {
+	#(b.rows) > #(b.cols) implies {
+		b.move in b.rows
+		#(b.move) = minus[#(b.rows), #(b.cols)]
 	}
-	m.before.cols > m.before.rows implies {
-		m.choiced = Col
-		m.choicen = m.before.rows
+	#(b.cols) > #(b.rows) implies {
+		b.move in b.cols
+		#(b.move) = minus[#(b.cols), #(b.rows)]
 	}
 }}
--- works all the time, trivial unsat if board is square
-pred PlayerOneStrategy { all b:Board-last |
-	b.turn = One implies b.next.rows = b.next.cols
+-- square board implies unsat
+pred StrongP1Strategy { all b:Board-last |
+	b.turn = P1 implies #(b.next.rows) = #(b.next.cols)
 }
-run PlayerOneStrategy for exactly 5 Board, exactly 4 Move, 4 Int
-assert StrategyWorks { PlayerOneStrategy implies winner[One] }
-check StrategyWorks for exactly 5 Board, exactly 4 Move, 4 Int
+run WeakP1Strategy for 6 Board, 4 Row, 4 Col, 4 Int
+assert WeakWorks { WeakP1Strategy implies winner[P1] }
+check WeakWorks for 6 Board, 4 Row, 4 Col, 4 Int
+run StrongP1Strategy for 6 Board, 4 Row, 4 Col, 4 Int
+assert StrongWorks { StrongP1Strategy implies winner[P1] }
+check StrongWorks 
 // Square Board
-pred SquareBoard[b: Board] { b.rows = b.cols }
-pred StrategyTooStrong { PlayerOneStrategy and SquareBoard[first] }
-run StrategyTooStrong for exactly 5 Board, exactly 4 Move, 4 Int
-pred StrategyTooWeak { WeakPlayerOneStrategy and not SquareBoard[first] and not winner[One] } 
-run StrategyTooWeak for exactly 4 Board, exactly 3 Move, 4 Int 
- 
+pred SquareBoard[b: Board] { #(b.rows) = #(b.cols) }
+pred StrongTooStrong { StrongP1Strategy and SquareBoard[first] }
+run StrongTooStrong for 6 Board, 4 Row, 4 Col, 4 Int
+pred WeakTooWeak { WeakP1Strategy and not SquareBoard[first] and not winner[P1] } 
+run WeakTooWeak for 5 Board, 3 Row, 3 Col, 3 Int
