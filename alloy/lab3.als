@@ -10,6 +10,7 @@ abstract sig Board {
   turn : one Player,
   move : set Dimension
 }
+// Transitions
 fact StartingBoard {
   first.turn = P1
   some first.rows
@@ -22,6 +23,7 @@ fact MoveUpdate { all b:Board | {
     b.next.cols = b.cols - b.move
 }}
 fact AlternatingMoves { all b:Board | b.next.turn != b.turn }
+// Sanity Checks
 pred losing[b: Board] {
 	some b.rows and some b.cols
 	no b.next.rows or no b.next.cols
@@ -30,16 +32,14 @@ pred winner[p: Player] { some b: Board | {
     losing[b]
     b.turn != p
 }}
-// Sanity Checks
 pred oneCanWin { winner[P1] }
-run oneCanWin for 6 Board, 4 Row, 4 Col, 4 Int
+run oneCanWin for 5 Board, 4 Row, 4 Col, 3 Int
 pred twoCanWin { winner[P2] }
-run twoCanWin for 6 Board, 4 Row, 4 Col, 4 Int
-assert onlyOneCanWin { not winner[P1] or not winner[P2] }
-check onlyOneCanWin for 6 Board, 4 Row, 4 Col, 4 Int
+run twoCanWin for 5 Board, 4 Row, 4 Col, 3 Int
+assert bothCantWin { not winner[P1] or not winner[P2] }
+check bothCantWin for 5 Board, 4 Row, 4 Col, 3 Int
 // Winning Strategy
--- square board implies nothing
-pred WeakP1Strategy { all b:Board | b.turn = P1 implies {
+pred WinningStrategy[p: Player] { all b:Board | b.turn = p implies {
 	#(b.rows) > #(b.cols) implies {
 		b.move in b.rows
 		#(b.move) = minus[#(b.rows), #(b.cols)]
@@ -48,20 +48,17 @@ pred WeakP1Strategy { all b:Board | b.turn = P1 implies {
 		b.move in b.cols
 		#(b.move) = minus[#(b.cols), #(b.rows)]
 	}
+	#(b.cols) = #(b.rows) implies {
+		#(b.move) = 1
+	}
 }}
--- square board implies unsat
-pred StrongP1Strategy { all b:Board-last |
-	b.turn = P1 implies #(b.next.rows) = #(b.next.cols)
-}
-run WeakP1Strategy for 6 Board, 4 Row, 4 Col, 4 Int
-assert WeakWorks { WeakP1Strategy implies winner[P1] }
-check WeakWorks for 6 Board, 4 Row, 4 Col, 4 Int
-run StrongP1Strategy for 6 Board, 4 Row, 4 Col, 4 Int
-assert StrongWorks { StrongP1Strategy implies winner[P1] }
-check StrongWorks 
-// Square Board
-pred SquareBoard[b: Board] { #(b.rows) = #(b.cols) }
-pred StrongTooStrong { StrongP1Strategy and SquareBoard[first] }
-run StrongTooStrong for 6 Board, 4 Row, 4 Col, 4 Int
-pred WeakTooWeak { WeakP1Strategy and not SquareBoard[first] and not winner[P1] } 
-run WeakTooWeak for 5 Board, 3 Row, 3 Col, 3 Int
+pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
+run P1StrategySound { P1StrategyWins } for 5 Board, 4 Row, 4 Col, 3 Int
+check P1StrategyComplete { P1StrategyWins } for 5 Board, 4 Row, 4 Col, 3 Int
+// Study
+pred property { not P1StrategyWins }
+run propertyHolds { property } for 5 Board, 4 Row, 4 Col, 3 Int
+run propertyFails { not property } for 5 Board, 4 Row, 4 Col, 3 Int
+pred SquareStart { #(first.rows) = #(first.cols) }
+pred reason { WinningStrategy[P1] and /* FILL AFTER HERE */ SquareStart and WinningStrategy[P2] }
+check validateReason { reason iff property } for 5 Board, 4 Row, 4 Col, 3 Int
