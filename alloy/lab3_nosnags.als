@@ -9,8 +9,7 @@ sig Index {}
 abstract sig Board {
   inplay : Dimension -> set Index,
   turn : one Player,
-  choiced : one Dimension,
-  choicen : set Index
+  choiced : one Dimension
 }
 // Transitions
 fact StartingBoard {
@@ -22,25 +21,18 @@ fact OrderedBoards { all b:Board | all i:Index | {
 	i in b.inplay[Rows] implies i.prev in b.inplay[Rows]
 	i in b.inplay[Cols] implies i.prev in b.inplay[Cols]
 }}
-fact ForceMoves { all b:Board | (some b.inplay[Rows] or some b.inplay[Cols]) implies some b.choicen } 
-fact AlternatingMoves { all b:Board | b.next.turn != b.turn }
-fact OneDimensionalMoves { all b:Board | {
-	b.choiced = Rows implies {
-		b.choicen in b.inplay[Rows]
-	}
-	b.choiced = Cols implies {
-		b.choicen in b.inplay[Cols]
-	}
-}}
 fact UpdateMoves {  all b:Board | {
 	b.choiced = Rows implies {
-		b.next.inplay[Rows] = b.inplay[Rows] - b.choicen 
+		b.next.inplay[Rows] in b.inplay[Rows]
+		b.inplay[Rows] not in b.next.inplay[Rows]
 		b.next.inplay[Cols] = b.inplay[Cols]
 	}
 	b.choiced = Cols implies {
+		b.next.inplay[Cols] in b.inplay[Cols]
+		b.inplay[Cols] not in b.next.inplay[Cols]
 		b.next.inplay[Rows] = b.inplay[Rows]
-		b.next.inplay[Cols] = b.inplay[Cols] - b.choicen 
 	}
+	b.next.turn != b.turn
 }}
 // Sanity Checks
 pred losing[b: Board] {
@@ -54,7 +46,7 @@ pred twoCanWin { winner[P2] }
 run twoCanWin for 6 Board, 6 Index
 assert bothCantWin { not winner[P1] or not winner[P2] }
 check bothCantWin for 6 Board, 6 Index
-// Winning Strategy
+/* Winning Strategy
 pred WinningStrategy[p: Player] { all b:Board | b.turn = p implies {
 	b.inplay[Rows] not in b.inplay[Cols] implies {
 		b.choiced in Rows
@@ -69,11 +61,12 @@ pred WinningStrategy[p: Player] { all b:Board | b.turn = p implies {
 		b.choicen = (b.inplay[Rows]).last = (b.inplay[Cols]).last
 	}
 */
+/*
 }}
 pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
 run P1StrategySound { P1StrategyWins } for 6 Board, 6 Index
 check P1StrategyComplete { P1StrategyWins } for 6 Board, exactly 6 Index
-
+*/
 // Study
 //pred property { not P1StrategyWins }
 //run propertyHolds { property } for 5 Board, 4 Row, 4 Col, 3 Int
