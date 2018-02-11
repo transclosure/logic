@@ -10,17 +10,16 @@ abstract sig Board {
   inplay : Dimension -> set Index,
   turn : one Player,
   choiced : one Dimension
-}
+} { all i:Index | {
+	i in inplay[Rows] implies i.prev in inplay[Rows]
+	i in inplay[Cols] implies i.prev in inplay[Cols]
+}}
 // Transitions
 fact StartingBoard {
   first.turn = P1
   some first.inplay[Rows]
   some first.inplay[Cols]
 }
-fact OrderedBoards { all b:Board | all i:Index | {
-	i in b.inplay[Rows] implies i.prev in b.inplay[Rows]
-	i in b.inplay[Cols] implies i.prev in b.inplay[Cols]
-}}
 fact UpdateMoves {  all b:Board | {
 	b.choiced = Rows implies {
 		b.next.inplay[Rows] in b.inplay[Rows]
@@ -46,31 +45,29 @@ pred twoCanWin { winner[P2] }
 run twoCanWin for 6 Board, 6 Index
 assert bothCantWin { not winner[P1] or not winner[P2] }
 check bothCantWin for 6 Board, 6 Index
-/* Winning Strategy
+// Winning Strategy
 pred WinningStrategy[p: Player] { all b:Board | b.turn = p implies {
 	b.inplay[Rows] not in b.inplay[Cols] implies {
 		b.choiced in Rows
-		b.choicen = b.inplay[Rows] - b.inplay[Cols]
+		b.next.inplay[Rows] = b.inplay[Cols]
 	}
 	b.inplay[Cols] not in b.inplay[Rows] implies {
 		b.choiced in Cols
-		b.choicen = b.inplay[Cols] - b.inplay[Rows]
+		b.next.inplay[Cols] = b.inplay[Rows]
 	}
-/* why isn't it doing .last for Index, not Board? how to disambiguate?
 	b.inplay[Cols] = b.inplay[Rows] implies {
-		b.choicen = (b.inplay[Rows]).last = (b.inplay[Cols]).last
+		(one b.inplay[Cols]-b.next.inplay[Cols] and no b.inplay[Rows]-b.next.inplay[Rows])
+		or
+		(one b.inplay[Rows]-b.next.inplay[Rows] and no b.inplay[Cols]-b.next.inplay[Cols])
 	}
-*/
-/*
 }}
 pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
 run P1StrategySound { P1StrategyWins } for 6 Board, 6 Index
-check P1StrategyComplete { P1StrategyWins } for 6 Board, exactly 6 Index
-*/
+check P1StrategyComplete { P1StrategyWins } for 6 Board, 6 Index
 // Study
-//pred property { not P1StrategyWins }
-//run propertyHolds { property } for 5 Board, 4 Row, 4 Col, 3 Int
-//run propertyFails { not property } for 5 Board, 4 Row, 4 Col, 3 Int
-//pred SquareStart { #(first.rows) = #(first.cols) }
-//pred reason { WinningStrategy[P1] and /* FILL AFTER HERE */ SquareStart and WinningStrategy[P2] }
-//check validateReason { reason iff property } for 5 Board, 4 Row, 4 Col, 3 Int
+pred property { not P1StrategyWins }
+run propertyHolds { property } for 6 Board, 6 Index
+run propertyFails { not property } for 6 Board, 6 Index
+pred SquareStart { #(first.inplay[Rows]) = #(first.inplay[Cols]) }
+pred reason { WinningStrategy[P1] and /* FILL AFTER HERE */ SquareStart and WinningStrategy[P2] }
+check validateReason { reason iff property } for 6 Board, 6 Index
