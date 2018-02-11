@@ -14,30 +14,21 @@ abstract sig Board {
 pred playable[b: Board] { some b.inplay[Rows] and some b.inplay[Cols] }
 pred winner[p: Player] { some b: Board | playable[b] and not playable[b.next] and b.turn != p }
 // Transitions
-fact StartingBoard {
-  first.turn = P1
-  playable[first]
-}
+fact StartingBoard { first.turn = P1 and playable[first] }
 fact UpdateMoves {  all b:Board | {
 	-- alternating turns
 	b.next.turn != b.turn
 	-- must make a move if game is going
 	playable[b] implies some b.chomp 
-	-- row chomp = truncate rows, same cols 
-	b.chomp = Rows implies {
-		b.next.inplay[Rows] in b.inplay[Rows]
-		b.inplay[Rows] not in b.next.inplay[Rows]
-		b.next.inplay[Cols] = b.inplay[Cols]
-	}
-	-- col chomp = truncate cols, same cols 
-	b.chomp = Cols implies {
-		b.next.inplay[Cols] in b.inplay[Cols]
-		b.inplay[Cols] not in b.next.inplay[Cols]
-		b.next.inplay[Rows] = b.inplay[Rows]
+	-- row chomp = truncate rows and same cols
+	-- col chomp = truncate cols and same rows 
+	some b.chomp implies {
+		b.next.inplay[b.chomp] in b.inplay[b.chomp]
+		b.inplay[b.chomp] not in b.next.inplay[b.chomp]
+		b.next.inplay[Dimension-b.chomp] = b.inplay[Dimension-b.chomp]
 	}
 	-- no chomp = same rows, same cols
 	no b.chomp implies {
-		no b.next.chomp
 		b.next.inplay[Rows] = b.inplay[Rows]
 		b.next.inplay[Cols] = b.inplay[Cols]
 	}
@@ -47,15 +38,18 @@ run loseInOne { winner[P2] and not playable[first.next] } for 6 Board, 6 Index
 run winInTwo { winner[P1] and not playable[first.next.next] } for 6 Board, 6 Index
 check oneWinner { not winner[P1] or not winner[P2] } for 6 Board, 6 Index
 // Winning Strategy
-pred WinningStrategy[p: Player] { all b:Board | b.turn = p implies {
+pred WinningStrategy[p: Player] { all b:Board | playable[b] and b.turn = p implies {
+	-- more rows than cols
 	b.inplay[Rows] not in b.inplay[Cols] implies {
 		b.chomp in Rows
 		b.next.inplay[Rows] = b.inplay[Cols]
 	}
+	-- more cols than rows
 	b.inplay[Cols] not in b.inplay[Rows] implies {
 		b.chomp in Cols
 		b.next.inplay[Cols] = b.inplay[Rows]
 	}
+	-- equal rows and cols
 	b.inplay[Cols] = b.inplay[Rows] implies {
 		(one b.inplay[Cols]-b.next.inplay[Cols] and no b.inplay[Rows]-b.next.inplay[Rows])
 		or
