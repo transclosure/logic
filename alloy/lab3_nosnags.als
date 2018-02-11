@@ -1,5 +1,5 @@
 open util/ordering[Board]
-open util/ordering[Index]
+//open util/ordering[Index] you can chomp unordered rows/cols, still the same game
 // State
 abstract sig Player {}
 one sig P1, P2 extends Player {}
