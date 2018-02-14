@@ -31,7 +31,6 @@ fact NextBoard {  all b:Board-last | { -- last.next is a really good gotcha (it 
 	no b.chomp implies b.inplay in b.next.inplay
 }}
 // Sanity Checks
-run {} for 6 Board, 6 Index
 run loseInOne { winner[P2] and not playable[first.next] } for 6 Board, 6 Index
 run winInTwo { winner[P1] and not playable[first.next.next] } for 6 Board, 6 Index
 check oneWinner { not winner[P1] or not winner[P2] } for 6 Board, 6 Index
@@ -56,7 +55,7 @@ pred WinningStrategy[p: Player] { all b:Board | playable[b] and b.turn = p impli
 }}
 pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
 run P1StrategySound { P1StrategyWins } for 6 Board, 6 Index
-check P1StrategyComplete { P1StrategyWins } for 6 Board, 6 Index
+check P1StrategyComplete { /*#first.inplay[Rows] = 6 implies*/ P1StrategyWins } for 12 Board, 6 Index, 6 Int
 // Study
 pred SquareStart { #(first.inplay[Rows]) = #(first.inplay[Cols]) }
 pred reason { WinningStrategy[P1] and /* FILL AFTER HERE */ SquareStart and WinningStrategy[P2] }
