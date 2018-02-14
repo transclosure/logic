@@ -13,26 +13,25 @@ abstract sig Board {
 pred playable[b: Board] { some b.inplay[Rows] and some b.inplay[Cols] }
 pred winner[p: Player] { some b: Board | playable[b] and not playable[b.next] and b.turn != p }
 // Transitions
-fact StartingBoard { first.turn = P1 and playable[first] }
-fact UpdateMoves {  all b:Board | {
-	-- alternating turns
+fact FirstBoard { playable[first] and first.turn = P1 }
+fact DefiniteGameplay { all b:Board | playable[b] iff some b.chomp }
+fact NextBoard {  all b:Board-last | { -- last.next is a really good gotcha (it got me!)
+	-- always alternate turns (util/ordering constraints are sorta like LTL, just an idea)
 	b.next.turn != b.turn
-	-- must make a move if game is going
-	playable[b] implies some b.chomp 
-	-- row chomp = truncate rows and same cols
-	-- col chomp = truncate cols and same rows 
+	-- board always stays the same, or gets smaller
+	b.next.inplay in b.inplay
+	-- a chomp move:
 	some b.chomp implies {
-		b.next.inplay[b.chomp] in b.inplay[b.chomp]
+		-- reduces the rows or cols
 		b.inplay[b.chomp] not in b.next.inplay[b.chomp]
-		b.next.inplay[Dimension-b.chomp] = b.inplay[Dimension-b.chomp]
+		-- but does not reduce the other dimension
+		b.inplay[Dimension-b.chomp] in b.next.inplay[Dimension-b.chomp] 
 	}
-	-- no chomp = same rows, same cols
-	no b.chomp implies {
-		b.next.inplay[Rows] = b.inplay[Rows]
-		b.next.inplay[Cols] = b.inplay[Cols]
-	}
+	-- no chomp, no reductions
+	no b.chomp implies b.inplay in b.next.inplay
 }}
 // Sanity Checks
+run {} for 6 Board, 6 Index
 run loseInOne { winner[P2] and not playable[first.next] } for 6 Board, 6 Index
 run winInTwo { winner[P1] and not playable[first.next.next] } for 6 Board, 6 Index
 check oneWinner { not winner[P1] or not winner[P2] } for 6 Board, 6 Index
