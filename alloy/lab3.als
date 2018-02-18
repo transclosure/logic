@@ -11,7 +11,6 @@ abstract sig Board {
   chomp : lone Dimension
 }
 pred playable[b: Board] { some b.inplay[Rows] and some b.inplay[Cols] }
-pred winner[p: Player] { some b: Board | playable[b] and not playable[b.next] and b.turn != p }
 // Transitions
 fact FirstBoard { playable[first] and first.turn = P1 }
 fact DefiniteGameplay { all b:Board | playable[b] iff some b.chomp }
@@ -22,27 +21,37 @@ fact NextBoard {  all b:Board-last | { -- last.next is a really good gotcha (it 
 	b.next.inplay in b.inplay
 	-- a chomp move:
 	some b.chomp implies {
-		-- reduces the rows or cols
-		b.inplay[b.chomp] not in b.next.inplay[b.chomp]
-		-- but does not reduce the other dimension
-		b.inplay[Dimension-b.chomp] in b.next.inplay[Dimension-b.chomp] 
+		-- chomp rows, not cols
+		b.chomp in Rows implies {
+			b.inplay[Rows] not in b.next.inplay[Rows]
+			b.inplay[Cols] in b.next.inplay[Cols]
+		}
+		-- chomp cols, not rows
+		b.chomp in Cols implies {
+			/* FILL */ 
+			b.inplay[Cols] not in b.next.inplay[Cols]
+			b.inplay[Rows] in b.next.inplay[Rows]
+		} 
 	}
 	-- no chomp, no reductions
 	no b.chomp implies b.inplay in b.next.inplay
 }}
+pred winner[p: Player] { some b: Board | playable[b] and not playable[b.next] and b.turn != p }
 // Sanity Checks
-run loseInOne { winner[P2] and not playable[first.next] } for 6 Board, 6 Index
-run winInTwo { winner[P1] and not playable[first.next.next] } for 6 Board, 6 Index
-check oneWinner { not winner[P1] or not winner[P2] } for 6 Board, 6 Index
+run loseInOne { winner[P2] and not playable[first.next] } for 10 Board, 5 Index, 5 Int
+run winInTwo { winner[P1] and not playable[first.next.next] } for 10 Board, 5 Index, 5 Int
+check oneWinner { not winner[P1] or not winner[P2] } for 10 Board, 5 Index, 5 Int
 // Winning Strategy
 pred WinningStrategy[p: Player] { all b:Board | playable[b] and b.turn = p implies {
 	-- more rows than cols
 	b.inplay[Rows] not in b.inplay[Cols] implies {
+		/* FILL */ 
 		b.chomp in Rows
 		b.next.inplay[Rows] = b.inplay[Cols]
 	}
 	-- more cols than rows
 	b.inplay[Cols] not in b.inplay[Rows] implies {
+		/* FILL */ 
 		b.chomp in Cols
 		b.next.inplay[Cols] = b.inplay[Rows]
 	}
@@ -54,9 +63,9 @@ pred WinningStrategy[p: Player] { all b:Board | playable[b] and b.turn = p impli
 	}
 }}
 pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
-run P1StrategySound { P1StrategyWins } for 6 Board, 6 Index
-check P1StrategyComplete { /*#first.inplay[Rows] = 6 implies*/ P1StrategyWins } for 12 Board, 6 Index, 6 Int
+run P1SometimesWins { P1StrategyWins } for 10 Board, 5 Index, 5 Int
+check P1AlwaysWins { P1StrategyWins } for 10 Board, 5 Index, 5 Int
 // Study
 pred SquareStart { #(first.inplay[Rows]) = #(first.inplay[Cols]) }
-pred reason { WinningStrategy[P1] and /* FILL AFTER HERE */ SquareStart and WinningStrategy[P2] }
-check validateReason { reason iff (not P1StrategyWins) } for 6 Board, 6 Index
+pred reason { WinningStrategy[P1] and /* FILL */ SquareStart and WinningStrategy[P2] }
+check validateReason { reason iff (not P1StrategyWins) } for 10 Board, 5 Index, 5 Int
