@@ -64,8 +64,9 @@ pred WinningStrategy[p: Player] { all b:Board | playable[b] and b.turn = p impli
 }}
 pred P1StrategyWins { WinningStrategy[P1] implies winner[P1] }
 run P1SometimesWins { P1StrategyWins } for 10 Board, 5 Index, 5 Int
-check P1AlwaysWins { P1StrategyWins } for 10 Board, 5 Index, 5 Int
+check P1AlwaysWins { P1StrategyWins } for 20 Board, 10 Index, 10 Int
 // Study
 pred SquareStart { #(first.inplay[Rows]) = #(first.inplay[Cols]) }
 pred reason { WinningStrategy[P1] and /* FILL */ SquareStart and WinningStrategy[P2] }
-check validateReason { reason iff (not P1StrategyWins) } for 10 Board, 5 Index, 5 Int
+check reasonImpliesP1StrategyFails { reason implies (not P1StrategyWins) } for 10 Board, 5 Index, 5 Int
+check P1StrategyFailsImpliesReason { (not P1StrategyWins) implies reason } for 10 Board, 5 Index, 5 Int
