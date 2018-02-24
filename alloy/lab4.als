@@ -75,13 +75,8 @@ check unionfind {unionNext implies find} for 5 Node, 5 State
 
 // Study
 pred buggyUnion[s: State, n1, n2: Node] { 
-	let oldRoot = n2.root[s] |
-	let newRoot = n1.root[s] | {
-    	-- set n1.root as parent of n2.root, no other parents altered
-		/* FILL */
-    	oldRoot.parent[s.next] = newRoot
-    	all n: Node - oldRoot | n.parent[s.next] = n.parent[s]
-	}
+	((n2.root[s]).parent[s.next] = n1.root[s]) or ((n1.root[s]).parent[s.next] = n2.root[s])
+	all n: Node - n2.root[s] - n1.root[s] | n.parent[s.next] = n.parent[s]
 }
 pred buggyUnionNext { all s: State - last | some n1, n2: Node | {
 	n1.root[s] != n2.root[s] and buggyUnion[s, n1, n2]
@@ -89,6 +84,10 @@ pred buggyUnionNext { all s: State - last | some n1, n2: Node | {
 pred buggyunionfindworks {buggyUnionNext implies find} 
 run buggyunionfindsometimesworks {buggyunionfindworks} for 5 Node, 5 State
 check buggyunionfindalwaysworks {buggyunionfindworks} for 5 Node, 5 State
-pred reason { /* FILL */ }
+pred reason { some s: State, n1,n2: Node | {
+	buggyUnion[s,n1,n2]
+	/*FILL*/ 
+	(n2.root[s]).parent[s.next] != (n2.root[s]).parent[s] or (n1.root[s]).parent[s.next] != (n1.root[s]).parent[s]  
+}}
 check reasonImpliesbuggyunionfindfails { reason implies (not buggyunionfindworks) } for 5 Node, 5 State
 check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 5 Node, 5 State
