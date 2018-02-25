@@ -8,7 +8,7 @@ sig Node {
 }
 // Mock-recursively (inductively) define root of each node in each state
 // More efficient than finding the root in the transitive closure of parents
-fact defineRoot { all s: State, n: Node {
+fact defineRoot { all s: State, n: Node { 
 	-- the node that is its own parent is the root
 	-- otherwise, get the root from your non-self parent (recurse)
 	/* FILL */
@@ -75,19 +75,29 @@ check unionfind {unionNext implies find} for 5 Node, 5 State
 
 // Study
 pred buggyUnion[s: State, n1, n2: Node] { 
-	((n2.root[s]).parent[s.next] = n1.root[s]) or ((n1.root[s]).parent[s.next] = n2.root[s])
+	(n2.root[s]).parent[s.next] = n1.root[s]
 	all n: Node - n2.root[s] - n1.root[s] | n.parent[s.next] = n.parent[s]
 }
 pred buggyUnionNext { all s: State - last | some n1, n2: Node | {
 	n1.root[s] != n2.root[s] and buggyUnion[s, n1, n2]
 }}
-pred buggyunionfindworks {buggyUnionNext implies find} 
+// concern, students will peek ahead and see completed strongfind!!!
+pred strongfind { all s: State | all disj n1,n2: Node | {
+	-- find expects all connected nodes to have the same root,
+	-- and all disjoint nodes to have different roots
+	sameRoot[n1,n2,s] iff {
+		connected[n1,n2,s]
+		-- stronger modelling constraints to remove trivial buggy counterexamples for study
+		n1.root[s] in n1.^(parents[s])
+		n2.root[s] in n2.^(parents[s])
+	}
+}}
+pred buggyunionfindworks {buggyUnionNext implies strongfind} 
 run buggyunionfindsometimesworks {buggyunionfindworks} for 5 Node, 5 State
 check buggyunionfindalwaysworks {buggyunionfindworks} for 5 Node, 5 State
-pred reason { some s: State, n1,n2: Node | {
-	buggyUnion[s,n1,n2]
-	/*FILL*/ 
-	(n2.root[s]).parent[s.next] != (n2.root[s]).parent[s] or (n1.root[s]).parent[s.next] != (n1.root[s]).parent[s]  
+pred reason { buggyUnionNext and some s: State, n: Node | {
+	/*FILL*/
+	n.root[s] not in n.^(parents[s]) 
 }}
-check reasonImpliesbuggyunionfindfails { reason implies (not buggyunionfindworks) } for 5 Node, 5 State
 check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 5 Node, 5 State
+check reasonImpliesbuggyunionfindfails { reason implies (not buggyunionfindworks) } for 5 Node, 5 State
