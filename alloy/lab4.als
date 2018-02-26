@@ -35,7 +35,7 @@ pred union[s: State, n1, n2: Node] {
 }
 // Every state, except the last, has a join between 2 unjoined nodes
 pred unionNext { all s: State - last | some n1, n2: Node | {
-	n1.root[s] != n2.root[s] and union[s, n1, n2]
+	union[s, n1, n2]
 }}
 // See if the union operations look correct to you before formally checking
 run unionexamples {unionNext} for exactly 5 Node, 5 State
@@ -79,7 +79,7 @@ pred buggyUnion[s: State, n1, n2: Node] {
 	all n: Node - n2.root[s] - n1.root[s] | n.parent[s.next] = n.parent[s]
 }
 pred buggyUnionNext { all s: State - last | some n1, n2: Node | {
-	n1.root[s] != n2.root[s] and buggyUnion[s, n1, n2]
+	buggyUnion[s, n1, n2]
 }}
 // concern, students will peek ahead and see completed strongfind!!!
 pred strongfind { all s: State | all disj n1,n2: Node | {
