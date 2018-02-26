@@ -34,18 +34,17 @@ pred union { some n1, n2: Node | {
 	}
 }}
 // See if the union operations look correct to you before formally checking
-run unionexamples {union} for 10 Node, 2 State
+run unionexamples {union} for 5 Node, 2 State
 
 
 
 // If our union operation is correct, find will preserved between pre and post
 pred find[s: State] { all disj n1,n2: Node | {
+	-- cycles should not exist in a clean find state
+	(n1.parent[s] != n1 implies n1 not in n1.^(parents[s]))
 	-- find expects all connected nodes to have the same root,
 	-- and all disjoint nodes to have different roots
 	sameRoot[n1,n2,s] iff connected[n1,n2,s]
-	-- stronger modelling constraints to remove trivial buggy counterexamples for study
-	n1.root[s] in n1.^(parents[s])
-	n2.root[s] in n2.^(parents[s])
 }}
 pred sameRoot[n1,n2: Node, s: State] {
 	-- nodes n1 and n2 have the same root in state s
@@ -59,7 +58,7 @@ pred connected[n1,n2: Node, s: State] {
     let bothWays = thisStateEdges + ~thisStateEdges |
 	n1 in n2.^bothWays
 }
-check unionfind { (find[PreState] and union) implies find[PostState] } for 10 Node, 2 State
+check unionfind { (find[PreState] and union) implies find[PostState] } for 5 Node, 2 State
 
 
 
@@ -70,19 +69,22 @@ pred buggyunion { some n1, n2: Node | {
 }}
 // concern, students will peek ahead and see completed strongfind!!!
 pred strongfind[s: State] { all disj n1,n2: Node | {
+	-- stronger modelling constraint to remove trivial buggy counterexamples for study
 	sameRoot[n1,n2,s] iff {
 		connected[n1,n2,s]
-		-- stronger modelling constraints to remove trivial buggy counterexamples for study
 		n1.root[s] in n1.^(parents[s])
 		n2.root[s] in n2.^(parents[s])
 	}
 }}
 pred buggyunionfindworks { (find[PreState] and buggyunion) implies find[PostState]} 
-run buggyunionfindsometimesworks {buggyunionfindworks} for 10 Node, 2 State
-check buggyunionfindalwaysworks {buggyunionfindworks} for 10 Node, 2 State
-pred reason { some n: Node | {
+run buggyunionfindsometimesworks {buggyunionfindworks} for 5 Node, 2 State
+check buggyunionfindalwaysworks {buggyunionfindworks} for 5 Node, 2 State
+pred reason { (find[PreState] and buggyunion) and some n: Node | {
+	-- buggy union introduces a cycle
+	((n.parent[PostState] != n and n in n.^(parents[PostState])) or
 	/*FILL*/
-	n.root[PostState] not in n.^(parents[PostState]) 
+	-- buggy union introduces an node that cannot reach it's root
+	n.root[PostState] not in n.^(parents[PostState]) )
 }}
-check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 10 Node, 2 State
-check reasonImpliesBuggyunionfindfails { reason implies (not buggyunionfindworks) } for 10 Node, 2 State
+check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 5 Node, 2 State
+check reasonImpliesBuggyunionfindfails { reason implies (not buggyunionfindworks) } for 5 Node, 2 State
