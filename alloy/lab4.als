@@ -14,6 +14,9 @@ fact nodeFacts {
 	-- one root?
 	-- underconstrianted with set? i think we're okay
 }
+-- we're okay
+check {find[StateA] implies all n: Node | one n.root[StateA] } for 5 Node, 2 State
+
 // Function for parents, makes binary operators easier (i.e. n.^parents[s]) 
 fun parents[s: State]: Node -> Node {
   {n1, n2: Node | n1->s->n2 in parent}
@@ -41,7 +44,7 @@ pred union { some n1, n2: Node | {
 	}
 }}
 // See if the union operations look correct to you before formally checking
-run unionexamples {union} for 5 Node, 2 State
+run unionexamples {union and all n: Node | one n.root[StateA]} for 5 Node, 2 State
 
 
 
