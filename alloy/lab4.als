@@ -4,8 +4,15 @@ sig State {}
 one sig PreState, PostState extends State {}
 // Our disjoint-sets consists of nodes, which each have:
 sig Node {
-	parent: State -> some Node,	-- one parent (part of algorithm)
+	parent: State -> set Node,	-- one parent (part of algorithm)
 	root  : State -> some Node	-- one root (abstraction for modeling)
+}
+fact nodeFacts {
+	-- one parent
+	#Node.parent[PreState] = #Node 
+	#Node.parent[PostState] = #Node
+	-- one root?
+	-- underconstrianted with some?
 }
 // Function for parents, makes binary operators easier (i.e. n.^parents[s]) 
 fun parents[s: State]: Node -> Node {
@@ -60,9 +67,7 @@ pred connected[n1,n2: Node, s: State] {
 }
 check unionfind { (find[PreState] and union) implies find[PostState] } for 5 Node, 2 State
 
-// fact that needs to be converted into an additional modelling constraint
-// in order to separate minimal and default model space
-fact { all n: Node | one n.parent[PreState] and one n.parent[PostState] } 
+ 
 
 // Study
 pred buggyunion { some n1, n2: Node | {
