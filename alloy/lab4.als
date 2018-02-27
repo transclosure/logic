@@ -1,18 +1,18 @@
 // State is just a point in time for our disjoint-set data structure
 // We're only considering two states: pre-union and post-union
 sig State {}
-one sig PreState, PostState extends State {}
+one sig StateA, StateB extends State {}
 // Our disjoint-sets consists of nodes, which each have:
 sig Node {
 	parent: State -> set Node,	-- one parent (part of algorithm)
-	root  : State -> some Node	-- one root (abstraction for modeling)
+	root  : State -> set Node	-- one root (abstraction for modeling)
 }
 fact nodeFacts {
 	-- one parent
-	#Node.parent[PreState] = #Node 
-	#Node.parent[PostState] = #Node
+	#Node.parent[StateA] = #Node 
+	#Node.parent[StateB] = #Node
 	-- one root?
-	-- underconstrianted with some?
+	-- underconstrianted with set? i think we're okay
 }
 // Function for parents, makes binary operators easier (i.e. n.^parents[s]) 
 fun parents[s: State]: Node -> Node {
@@ -32,12 +32,12 @@ fact defineRoot { all s: State, n: Node {
 
 // A union event joins two pre-state nodes in the post-state
 pred union { some n1, n2: Node | {
-	let oldRoot = n2.root[PreState] |
-	let newRoot = n1.root[PreState] | {
+	let oldRoot = n2.root[StateA] |
+	let newRoot = n1.root[StateA] | {
     	-- set n1.root as parent of n2.root, no other parents altered
 		/* FILL */
-    	oldRoot.parent[PostState] = newRoot
-    	all n: Node - oldRoot | n.parent[PostState] = n.parent[PreState]
+    	oldRoot.parent[StateB] = newRoot
+    	all n: Node - oldRoot | n.parent[StateB] = n.parent[StateA]
 	}
 }}
 // See if the union operations look correct to you before formally checking
@@ -65,33 +65,31 @@ pred connected[n1,n2: Node, s: State] {
     let bothWays = thisStateEdges + ~thisStateEdges |
 	n1 in n2.^bothWays
 }
-check unionfind { (find[PreState] and union) implies find[PostState] } for 5 Node, 2 State
+check unionfind { (find[StateA] and union) implies find[StateB] } for 5 Node, 2 State
 
  
 
 // Study
 pred buggyunion { some n1, n2: Node | {
-	(n2.root[PreState]).parent[PostState] = n1.root[PreState]
-	all n: Node - n2.root[PreState] - n1.root[PreState]  | n.parent[PostState] = n.parent[PreState]
+	(n2.root[StateA]).parent[StateB] = n1.root[StateA]
+	all n: Node - n2.root[StateA] - n1.root[StateA]  | n.parent[StateB] = n.parent[StateA]
 }}
-pred buggyunionfindworks { (find[PreState] and buggyunion) implies find[PostState]} 
+pred buggyunionfindworks { (find[StateA] and buggyunion) implies find[StateB]} 
 run buggyunionfindsometimesworks {buggyunionfindworks} for 5 Node, 2 State
 check buggyunionfindalwaysworks {buggyunionfindworks} for 5 Node, 2 State
 pred reason { 
 	// additional modelling constraints to remove trival counterexamples
 	-- buggyunionfind happens
-	find[PreState] and buggyunion
+	find[StateA] and buggyunion
 	// reason
 	some n: Node | {
 		// trivial reasons
-		-- buggy union introduces multiple parents
-		(not one n.parent[PostState]) or
 		-- buggy union introduces a cycle,
-		(n.parent[PostState] != n and n in n.^(parents[PostState])) or
+		(n.parent[StateB] != n and n in n.^(parents[StateA])) or
 		// non-trivial reason
 		/*FILL*/
 		-- buggy union introduces an node that cannot reach it's root
-		(n.root[PostState] not in n.^(parents[PostState]))
+		(n.root[StateB] not in n.^(parents[StateB]))
 	}
 }
 check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 5 Node, 2 State
