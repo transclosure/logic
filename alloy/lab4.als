@@ -4,8 +4,8 @@ sig State {}
 one sig PreState, PostState extends State {}
 // Our disjoint-sets consists of nodes, which each have:
 sig Node {
-	parent: State -> one Node,	-- one parent (part of algorithm)
-	root  : State -> one Node	-- one root (abstraction for modeling)
+	parent: State -> some Node,	-- one parent (part of algorithm)
+	root  : State -> some Node	-- one root (abstraction for modeling)
 }
 // Function for parents, makes binary operators easier (i.e. n.^parents[s]) 
 fun parents[s: State]: Node -> Node {
@@ -60,31 +60,34 @@ pred connected[n1,n2: Node, s: State] {
 }
 check unionfind { (find[PreState] and union) implies find[PostState] } for 5 Node, 2 State
 
-
+// fact that needs to be converted into an additional modelling constraint
+// in order to separate minimal and default model space
+fact { all n: Node | one n.parent[PreState] and one n.parent[PostState] } 
 
 // Study
 pred buggyunion { some n1, n2: Node | {
 	(n2.root[PreState]).parent[PostState] = n1.root[PreState]
 	all n: Node - n2.root[PreState] - n1.root[PreState]  | n.parent[PostState] = n.parent[PreState]
 }}
-// concern, students will peek ahead and see completed strongfind!!!
-pred strongfind[s: State] { all disj n1,n2: Node | {
-	-- stronger modelling constraint to remove trivial buggy counterexamples for study
-	sameRoot[n1,n2,s] iff {
-		connected[n1,n2,s]
-		n1.root[s] in n1.^(parents[s])
-		n2.root[s] in n2.^(parents[s])
-	}
-}}
 pred buggyunionfindworks { (find[PreState] and buggyunion) implies find[PostState]} 
 run buggyunionfindsometimesworks {buggyunionfindworks} for 5 Node, 2 State
 check buggyunionfindalwaysworks {buggyunionfindworks} for 5 Node, 2 State
-pred reason { (find[PreState] and buggyunion) and some n: Node | {
-	-- buggy union introduces a cycle
-	((n.parent[PostState] != n and n in n.^(parents[PostState])) or
-	/*FILL*/
-	-- buggy union introduces an node that cannot reach it's root
-	n.root[PostState] not in n.^(parents[PostState]) )
-}}
+pred reason { 
+	// additional modelling constraints to remove trival counterexamples
+	-- buggyunionfind happens
+	find[PreState] and buggyunion
+	// reason
+	some n: Node | {
+		// trivial reasons
+		-- buggy union introduces multiple parents
+		(not one n.parent[PostState]) or
+		-- buggy union introduces a cycle,
+		(n.parent[PostState] != n and n in n.^(parents[PostState])) or
+		// non-trivial reason
+		/*FILL*/
+		-- buggy union introduces an node that cannot reach it's root
+		(n.root[PostState] not in n.^(parents[PostState]))
+	}
+}
 check buggyunionfindfailsImpliesReason { (not buggyunionfindworks) implies reason } for 5 Node, 2 State
 check reasonImpliesBuggyunionfindfails { reason implies (not buggyunionfindworks) } for 5 Node, 2 State
