@@ -4,14 +4,9 @@ sig State {}
 one sig StateA, StateB extends State {}
 // Our disjoint-sets consists of nodes, which each have:
 sig Node {
-	-- part 1
-	/*
+	-- part 1 = ONE, study = SOME
 	parent: State -> one Node,	-- one parent (part of algorithm)
 	root  : State -> one Node	-- one root (abstraction for modeling)
-	*/
-	-- study
-	parent: State -> some Node,	-- one parent (part of algorithm)
-	root  : State -> some Node	-- one root (abstraction for modeling)
 }
 // Function for parents, makes binary operators easier (i.e. n.^parents[s]) 
 fun parents[s: State]: Node -> Node {
@@ -45,6 +40,8 @@ run unionexamples {union and all n: Node | one n.root[StateA]} for 5 Node, 2 Sta
 // If our union operation is correct, find will preserved between pre and post
 -- find is true of a state if that state is *well formed*
 pred find[s: State] { all disj n1,n2: Node | {
+	-- multiple parents should not exist in a clean find state
+	one n1.parent[s]
 	-- cycles should not exist in a clean find state
 	(n1.parent[s] != n1 implies n1 not in n1.^(parents[s]))
 	-- find expects all connected nodes to have the same root,
@@ -91,14 +88,14 @@ pred buggyunionfindWorks { (find[StateA] and buggyunion) implies find[StateB]}
 run bufSometimesWorks {buggyunionfindWorks} for 5 Node, 2 State
 check bufAlwaysWorks {buggyunionfindWorks} for 5 Node, 2 State
 pred reason { 
-	// additional modelling constraints to remove trival counterexamples
-	-- buggyunionfind happens
 	find[StateA]
 	buggyunion
 	// reasons
 	some n: Node | {
 		-- buggy union introduces a cycle,
-		(n.parent[StateB] != n and n in n.^(parents[StateA])) or
+		(n.parent[StateB] != n and n in n.^(parents[StateB])) or
+		-- buggy union introduces multiple parents
+		(not (one n.parent[StateB])) or
 		// non-trivial reason
 		/*FILL*/
 		-------------
