@@ -93,11 +93,12 @@ check bufAlwaysWorks {buggyunionfindWorks} for 5 Node, 2 State
 pred reason { 
 	// additional modelling constraints to remove trival counterexamples
 	-- buggyunionfind happens
-	find[StateA] and buggyunion
+	find[StateA]
+	buggyunion
 	// reasons
 	some n: Node | {
-		-- buggy union introduces a find-breaking cycle,
-		(not find[StateB] and (n.parent[StateB] != n and n in n.^(parents[StateA]))) or
+		-- buggy union introduces a cycle,
+		(n.parent[StateB] != n and n in n.^(parents[StateA])) or
 		// non-trivial reason
 		/*FILL*/
 		-------------
