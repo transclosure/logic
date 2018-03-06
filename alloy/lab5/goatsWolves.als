@@ -54,6 +54,7 @@ pred strategy {
 	-- assume we start in a preserved state
 	all side: Side | noEating[StateA, side]
 	-- ensure progress, preservation
+	/* FILL */
 	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
 	#{g: Goat | stays[g, StateA]} > #{w: Wolf | stays[w, StateA]} 
 	#{g: Goat | crosses[g, StateA]} >= 	plus[#{w: Wolf | StateA.sideof[w]=Far},
