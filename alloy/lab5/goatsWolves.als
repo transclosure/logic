@@ -27,7 +27,6 @@ pred stays[c: Character, s: State] {
 }
 fact { 
 	-- state constraints
-	StateA.sideof[Boat] = Near
 	StateA.next = StateB
 	StateB.next = StateC
 	-- transition constraints 
@@ -37,36 +36,41 @@ fact {
 	}
 }
 
-// Progress & Preservation
+// Study
+fact progress { 
+	-- assume our strategy will always make progress
+	#{c : Character | StateA.sideof[c] = Far} < #{c : Character | StateC.sideof[c] = Far}
+}
 pred noEating[s: one State, side: one Side] {
 	-- true if there are no goats on this side or
 	(no s.sideof[Goat] & side) or 
 	-- *if there are more goats than wolves
 	(#{g: Goat | s.sideof[g] = side} >= #{w: Wolf | s.sideof[w] = side})	
 }
-pred progress { 
-	#{c : Character | StateA.sideof[c] = Far} < #{c : Character | StateC.sideof[c] = Far}
-}
 pred preservation { all side: Side | {
 	noEating[StateB, side] and noEating[StateC, side]
 }}
 pred strategy {
+	-- assume we start in a preserved state
 	all side: Side | noEating[StateA, side]
-	-- naive, probably too strong, but works
-	-- ensure progress
-	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
 	-- ensure preservation
+	/* FILL */
+	/*
+	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
 	#{g: Goat | stays[g, StateA]} > #{w: Wolf | stays[w, StateA]} 
 	#{g: Goat | crosses[g, StateA]} >= 	plus[#{w: Wolf | StateA.sideof[w]=Far},
-											minus	[#{w: Wolf | crosses[w, StateA]},
-													#{g: Goat | StateA.sideof[g]=Far}
-													]
-											]
+											minus[	#{w: Wolf | crosses[w, StateA]},
+											 		#{g: Goat | StateA.sideof[g]=Far}
+											]]
 	#{g: Goat | crosses[g, StateB]} = #{w: Wolf | crosses[w, StateB]}
+	*/
 }
 run strategySometimesWorks {
-	strategy and (progress and preservation)
-} for exactly 6 Goat, exactly 6 Wolf, 4 Int
+	strategy and preservation
+} for 5 Goat, 5 Wolf, 5 Int
 check strategyAlwaysWorks {
-	strategy implies (progress and preservation)
-} for exactly 16 Goat, exactly 16 Wolf, 9 Int
+	strategy implies preservation
+} for 5 Goat, 5 Wolf, 5 Int
+check strategyAlwaysWorksBIG {
+	strategy implies preservation
+} for exactly 12 Goat, exactly 12 Wolf, 10 Int
