@@ -27,6 +27,7 @@ pred stays[c: Character, s: State] {
 }
 fact { 
 	-- state constraints
+	StateA.sideof[Boat] = Near
 	StateA.next = StateB
 	StateB.next = StateC
 	-- transition constraints 
@@ -37,8 +38,7 @@ fact {
 }
 
 // Study
-fact progress { 
-	-- assume our strategy will always make progress
+pred progress { 
 	#{c : Character | StateA.sideof[c] = Far} < #{c : Character | StateC.sideof[c] = Far}
 }
 pred noEating[s: one State, side: one Side] {
@@ -53,24 +53,22 @@ pred preservation { all side: Side | {
 pred strategy {
 	-- assume we start in a preserved state
 	all side: Side | noEating[StateA, side]
-	-- ensure preservation
-	/* FILL */
-	/*
+	-- ensure progress, preservation
 	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
 	#{g: Goat | stays[g, StateA]} > #{w: Wolf | stays[w, StateA]} 
 	#{g: Goat | crosses[g, StateA]} >= 	plus[#{w: Wolf | StateA.sideof[w]=Far},
-											minus[	#{w: Wolf | crosses[w, StateA]},
-											 		#{g: Goat | StateA.sideof[g]=Far}
-											]]
+											minus	[#{w: Wolf | crosses[w, StateA]},
+													#{g: Goat | StateA.sideof[g]=Far}
+													]
+											]
 	#{g: Goat | crosses[g, StateB]} = #{w: Wolf | crosses[w, StateB]}
-	*/
 }
 run strategySometimesWorks {
-	strategy and preservation
+	strategy and (progress and preservation)
 } for 5 Goat, 5 Wolf, 5 Int
 check strategyAlwaysWorks {
-	strategy implies preservation
+	strategy implies (progress and preservation)
 } for 5 Goat, 5 Wolf, 5 Int
 check strategyAlwaysWorksBIG {
-	strategy implies preservation
-} for exactly 12 Goat, exactly 12 Wolf, 10 Int
+	strategy implies (progress and preservation)
+} for exactly 10 Goat, exactly 10 Wolf, 10 Int
