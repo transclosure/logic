@@ -88,16 +88,12 @@ pred reason {
 	-- additional modelling constraints to remove trivial counterexamples
 	find[StateA]
 	buggyunion
-	// reasons
+	// reason
 	some n: Node | {
-		// trivial reason
-		-- buggy union introduces a cycle,
-		(n.parent[StateB] != n and n in n.^(parents[StateB])) or
-		// non-trivial reason
 		/*FILL*/
 		-------------
-		-- buggy union introduces an node that cannot reach it's root
-		(n.root[StateB] not in n.^(parents[StateB]))
+		-- buggy union introduces a cycle,
+		(n.parent[StateB] != n and n in n.^(parents[StateB]))
 		-------------
 	}
 }
