@@ -27,7 +27,7 @@ pred stays[c: Character, s: State] {
 }
 fact { 
 	-- state constraints
-	StateA.sideof[Boat] = Near
+	StateA.sideof[Boat] = Near								-- boat starts on near side
 	StateA.next = StateB
 	StateB.next = StateC
 	-- transition constraints 
@@ -49,50 +49,18 @@ pred noEating[s: one State, side: one Side] {
 	(#{g: Goat | s.sideof[g] = side} >= #{w: Wolf | s.sideof[w] = side})	
 }
 pred preservation { all side: Side | {
-	noEating[StateB, side] and noEating[StateC, side]
+	noEating[StateA, side]
+	noEating[StateB, side]
+	noEating[StateC, side]
 }}
-pred strategy {
-	-- assume we start in a preserved state
-	all side: Side | noEating[StateA, side]
-	-- ensure progress, preservation
+fact assuming { preservation }
+run progress {progress} for 5 Goat, 5 Wolf, 5 Int
+run noProgress {not progress} for 5 Goat, 5 Wolf, 5 Int
+pred reason {
 	/* FILL */
-	/* Tim's bug
-    one g: Goat | crosses[g, StateA]
-    one w: Wolf | crosses[w, StateA]
-    some StateB.sideof implies {
-		one g: Goat | crosses[g, StateB]
-		no  w: Wolf | crosses[w, StateB]
-	} else {
-		no 	g: Goat | crosses[g, StateB]
-		no  w: Wolf | crosses[w, StateB]
-	}
-	*/
-	/* Tasha's solution 
-	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
-	#{g: Goat | stays[g, StateA]} > #{w: Wolf | stays[w, StateA]} 
-	#{g: Goat | crosses[g, StateA]} >= 	plus[#{w: Wolf | StateA.sideof[w]=Far},
-											minus	[#{w: Wolf | crosses[w, StateA]},
-													#{g: Goat | StateA.sideof[g]=Far}
-													]
-											]
-	#{g: Goat | crosses[g, StateB]} = #{w: Wolf | crosses[w, StateB]}
-	*/
+	-- more cross when the boat is Near than when the boat is Far
+	-- we can make this harder by removing the constraint that StateA is always the near boat state
+	#{c: Character-Boat | crosses[c, StateA]} <= #{c: Character-Boat | crosses[c, StateB]}
 }
-run strategySometimesWorks {
-	strategy and (progress and preservation)
-} for 5 Goat, 5 Wolf, 5 Int
-check strategyAlwaysWorks {
-	strategy implies (progress and preservation)
-} for 5 Goat, 5 Wolf, 5 Int
-check strategyAlwaysWorksBIG {
-	strategy implies (progress and preservation)
-} for exactly 10 Goat, exactly 10 Wolf, 10 Int
-
-run alternativeStudy {
-	-- assuming
-	all side: Side | noEating[StateA, side]
-	preservation 
-	-- characterize the situations where
-	not progress
-} for 5 Goat, 5 Wolf, 5 Int
-
+check {reason implies (not progress)} for 5 Goat, 5 Wolf, 5 Int
+check {(not progress) implies reason} for 5 Goat, 5 Wolf, 5 Int
