@@ -27,13 +27,13 @@ pred stays[c: Character, s: State] {
 }
 fact { 
 	-- state constraints
-	StateA.sideof[Boat] = Near								-- boat starts on near side
 	StateA.next = StateB
 	StateB.next = StateC
 	-- transition constraints 
 	all s: State - StateC | {
-		crosses[Boat, s] and crosses[Boat, s]				-- boat crosses every state
+		crosses[Boat, s]									-- boat crosses every state
 		all c:Character-Boat | crosses[c,s] or stays[c, s] 	-- characters follow rules
+		//removed for study
 		//some c:Character-Boat | crosses[c,s]				-- boat cannot be empty
 	}
 }
@@ -56,11 +56,12 @@ pred preservation { all side: Side | {
 fact assuming { preservation }
 run progress {progress} for 5 Goat, 5 Wolf, 5 Int
 run noProgress {not progress} for 5 Goat, 5 Wolf, 5 Int
-pred reason {
+pred reason { some boatnear: StateA+StateB | some boatfar: StateA+StateB | {
+	boatnear.sideof[Boat] = Near
+	boatfar.sideof[Boat] = Far
 	/* FILL */
 	-- more cross when the boat is Near than when the boat is Far
-	-- we can make this harder by removing the constraint that StateA is always the near boat state
-	#{c: Character-Boat | crosses[c, StateA]} <= #{c: Character-Boat | crosses[c, StateB]}
-}
+	#{c: Character-Boat | crosses[c, boatnear]} <= #{c: Character-Boat | crosses[c, boatfar]}
+}}
 check {reason implies (not progress)} for 5 Goat, 5 Wolf, 5 Int
 check {(not progress) implies reason} for 5 Goat, 5 Wolf, 5 Int
