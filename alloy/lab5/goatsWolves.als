@@ -34,6 +34,7 @@ fact {
 	all s: State - StateC | {
 		crosses[Boat, s] and crosses[Boat, s]				-- boat crosses every state
 		all c:Character-Boat | crosses[c,s] or stays[c, s] 	-- characters follow rules
+		//some c:Character-Boat | crosses[c,s]				-- boat cannot be empty
 	}
 }
 
@@ -55,6 +56,18 @@ pred strategy {
 	all side: Side | noEating[StateA, side]
 	-- ensure progress, preservation
 	/* FILL */
+	/* Tim's bug
+    one g: Goat | crosses[g, StateA]
+    one w: Wolf | crosses[w, StateA]
+    some StateB.sideof implies {
+		one g: Goat | crosses[g, StateB]
+		no  w: Wolf | crosses[w, StateB]
+	} else {
+		no 	g: Goat | crosses[g, StateB]
+		no  w: Wolf | crosses[w, StateB]
+	}
+	*/
+	/* Tasha's solution 
 	#{g: Goat | crosses[g, StateA]} >= #{g: Goat | crosses[g, StateB]}
 	#{g: Goat | stays[g, StateA]} > #{w: Wolf | stays[w, StateA]} 
 	#{g: Goat | crosses[g, StateA]} >= 	plus[#{w: Wolf | StateA.sideof[w]=Far},
@@ -63,6 +76,7 @@ pred strategy {
 													]
 											]
 	#{g: Goat | crosses[g, StateB]} = #{w: Wolf | crosses[w, StateB]}
+	*/
 }
 run strategySometimesWorks {
 	strategy and (progress and preservation)
@@ -73,3 +87,12 @@ check strategyAlwaysWorks {
 check strategyAlwaysWorksBIG {
 	strategy implies (progress and preservation)
 } for exactly 10 Goat, exactly 10 Wolf, 10 Int
+
+run alternativeStudy {
+	-- assuming
+	all side: Side | noEating[StateA, side]
+	preservation 
+	-- characterize the situations where
+	not progress
+} for 5 Goat, 5 Wolf, 5 Int
+
