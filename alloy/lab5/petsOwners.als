@@ -1,3 +1,5 @@
+open util/ordering[State]
+
 // Characters
 abstract sig Character {}
 one sig Boat extends Character {}
@@ -14,58 +16,35 @@ fact {
 // State
 abstract sig Side {}
 one sig Near, Far extends Side {}
-abstract sig State { 
-	sideof : Character -> one Side,
-	next: lone State
-}
-one sig StateA, StateB, StateC extends State {}
-pred crosses[c: Character, s: State] { 
-	-- character is on the boat side
-	s.sideof[c] = s.sideof[Boat]
-	-- they cross to the other side with the boat
-	s.next.sideof[c] = Side-s.sideof[Boat]
-}
-pred stays[c: Character, s: State] { 
-	-- character stays put
-	s.next.sideof[c] = s.sideof[c]
-}
-fact { 
-	-- state constraints
-	StateA.next = StateB
-	StateB.next = StateC
-	-- transition constraints 
-	all s: State - StateC | {
-		crosses[Boat, s]									-- boat crosses every state
-		all c:Character-Boat | crosses[c,s] or stays[c, s] 	-- characters follow rules
-		//removed for study
-		//some c:Character-Boat | crosses[c,s]				-- boat cannot be empty
+sig State { sideof : Character -> one Side }
+pred cross[s: State] { 
+	some disj a, b : Character {
+		-- pick two distinct boat side characters
+		s.sideof[a] = s.sideof[Boat]
+		s.sideof[b] = s.sideof[Boat]
+		-- move them and the boat to the other side
+		s.next.sideof[a] = Side-s.sideof[Boat]
+		s.next.sideof[b] = Side-s.sideof[Boat]
+		s.next.sideof[Boat] = Side-s.sideof[Boat]
+		-- everyone else stays put
+		all c:Character-a-b-Boat | s.next.sideof[c] = s.sideof[c]
 	}
 }
-
-// Study
-pred progress { 
-	#{c : Character | StateA.sideof[c] = Far} < #{c : Character | StateC.sideof[c] = Far}
+fact {
+	all c:Character | first.sideof[c] = Near	-- all on the near side in the first state
+	all c:Character | last.sideof[c] = Far 		-- all on the far side in the last state
+	all s: State - last | cross[s]				-- one cross event per state
 }
+
+// Solution
 pred noJealousy[s: one State, side: one Side] {
 	-- true if there are no owners on this side or
 	(no s.sideof[Owner] & side) or 
 	-- *if all the pets' owners are present
 	(all p : Pet | s.sideof[p] = side implies s.sideof[p.owner] = side)	
 }
-pred preservation { all side: Side | {
-	noJealousy[StateA, side]
-	noJealousy[StateB, side]
-	noJealousy[StateC, side]
-}}
-fact assuming { preservation }
-run progress {progress} for 5 Pet, 5 Owner, 5 Int
-run noProgress {not progress} for 5 Pet, 5 Owner, 5 Int
-pred reason { some nearToFar: StateA+StateB | some farToNear: StateA+StateB | {
-	nearToFar.sideof[Boat] = Near
-	farToNear.sideof[Boat] = Far
-	/* FILL */
-	-- more cross when the boat is Near than when the boat is Far
-	#{c: Character-Boat | crosses[c, nearToFar]} <= #{c: Character-Boat | crosses[c, farToNear]}
-}}
-check {reason implies (not progress)} for 5 Pet, 5 Owner, 5 Int
-check {(not progress) implies reason} for 5 Pet, 5 Owner, 5 Int
+pred solvePuzzle {
+	-- a state ordering is a solution to the puzzle if no pet ever gets jealous
+	all s : State | noJealousy[s, Near] and noJealousy[s, Far]
+}
+run solvePuzzle for exactly 3 Pet, exactly 3 Owner, 12 State
