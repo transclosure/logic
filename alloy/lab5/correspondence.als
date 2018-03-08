@@ -1,36 +1,51 @@
 open petsOwners as po
 open goatsWolves as gw
 
-// Define a relation of the form {gw/State0 -> po/State0, ... }
-one sig Cor {
-	cor: set gw/State->po/State
-}{
-	-- Induction in Alloy! So cool!
-	gw/first->po/first in cor
-	all gwS: gw/State - gw/last | 
-		all poS: po/State - po/last |
-			gwS->poS in cor iff gwS.next->poS.next in cor
+// State Relation
+one sig Correspondence {
+	ofState: gw/State -> po/State
 }
-
-// Count up them sides
-pred corStates[gwS: gw/State, poS: po/State] {
-	#{g: Goat | gwS.sideof[g] = gw/Near} = #{o: Owner | poS.sideof[o] = po/Near}
-	#{w: Wolf | gwS.sideof[w] = gw/Near} = #{p: Pet | poS.sideof[p] = po/Near}
-
-	#{g: Goat | gwS.sideof[g] = gw/Far} = #{o: Owner | poS.sideof[o] = po/Far}
-	#{w: Wolf | gwS.sideof[w] = gw/Far} = #{p: Pet | poS.sideof[p] = po/Far}
+fact {
+	-- Define the correspondence of states inductively
+	-- Want a relation of the form:
+	-- {gw/State0 -> po/State0, gw/State1 -> po/State1, ...}
+	gw/first->po/first in Correspondence.ofState
+	all gwS: gw/State - gw/last | all poS: po/State - po/last | {
+		/* FILL */
+		gwS->poS in Correspondence.ofState iff gwS.next->poS.next in Correspondence.ofState
+	}
 }
+run {} for 12 but exactly 3 Pet, exactly 3 Owner
 
-// All states in the relation correspond (wish Alloy had a "map" function)
+// State Correspondence
+fun poCount[characterType	: set po/Character,
+			state			: one po/State, 
+			side			: one po/Side] : one Int {
+	#{c: characterType | state.sideof[c] = side}
+}
+fun gwCount[characterType	: set gw/Character,
+			state			: one gw/State, 
+			side			: one gw/Side] : one Int {
+	#{c: characterType | state.sideof[c] = side}
+}
+pred correspondenceOfState[gwS: gw/State, poS: po/State] {
+	-- What correspondence is there between the character-side counts in each problem state?
+	/* FILL */
+	gwCount[gw/Goat, gwS, gw/Near] 	= poCount[po/Owner, poS, po/Near]
+	gwCount[gw/Wolf, gwS, gw/Near] 	= poCount[po/Pet, poS, po/Near]
+	gwCount[gw/Goat, gwS, gw/Far] 	= poCount[po/Owner, poS, po/Far]
+	gwCount[gw/Wolf, gwS, gw/Far] 	= poCount[po/Pet, poS, po/Far]
+}
 pred correspondence {
-	all gwS: gw/State | all poS: po/State |
-		gwS->poS in Cor.cor =>corStates[gwS, poS]
+	-- All states in the relation correspond
+	all gwS: gw/State | all poS: po/State | {
+		gwS->poS in Correspondence.ofState <=> correspondenceOfState[gwS, poS]
+	}
 }
 run {po/solvePuzzle and correspondence} for 12 but exactly 3 Pet, exactly 3 Owner
 
-// If PO is solved and there is a correspondence to a GW solution, then GW is also solved
-assert POimpliesGW {
-	(po/solvePuzzle and correspondence) =>
-		gw/solvePuzzle
-}
+// Verify Correspondence
+assert POimpliesGW { (po/solvePuzzle and correspondence) => gw/solvePuzzle }
+assert GWimpliesPO { (gw/solvePuzzle and correspondence) => po/solvePuzzle }
 check POimpliesGW for 12 but exactly 3 Pet, exactly 3 Owner
+check GWimpliesPO for 12 but exactly 3 Pet, exactly 3 Owner

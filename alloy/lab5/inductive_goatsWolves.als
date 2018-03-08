@@ -63,5 +63,5 @@ pred reason { some nearToFar: StateA+StateB | some farToNear: StateA+StateB | {
 	-- more cross when the boat is Near than when the boat is Far
 	#{c: Character-Boat | crosses[c, nearToFar]} <= #{c: Character-Boat | crosses[c, farToNear]}
 }}
-check {reason implies (not progress)} for 5 Goat, 5 Wolf, 5 Int
-check {(not progress) implies reason} for 5 Goat, 5 Wolf, 5 Int
+check reasonImpliesNoProgress {reason implies (not progress)} for 5 Goat, 5 Wolf, 5 Int
+check noProgressImpliesReason {(not progress) implies reason} for 5 Goat, 5 Wolf, 5 Int
