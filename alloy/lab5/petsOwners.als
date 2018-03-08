@@ -31,17 +31,17 @@ pred stays[c: Character, s: State] {
 }
 fact { 
 	-- state constraints
-	StateA.sideof[Boat] = Near
 	StateA.next = StateB
 	StateB.next = StateC
 	-- transition constraints 
 	all s: State - StateC | {
-		crosses[Boat, s] and crosses[Boat, s]				-- boat crosses every state
+		crosses[Boat, s]									-- boat crosses every state
 		all c:Character-Boat | crosses[c,s] or stays[c, s] 	-- characters follow rules
+		//removed for study
+		//some c:Character-Boat | crosses[c,s]				-- boat cannot be empty
 	}
 }
 
-// Solution
 // Study
 pred progress { 
 	#{c : Character | StateA.sideof[c] = Far} < #{c : Character | StateC.sideof[c] = Far}
@@ -53,21 +53,19 @@ pred noJealousy[s: one State, side: one Side] {
 	(all p : Pet | s.sideof[p] = side implies s.sideof[p.owner] = side)	
 }
 pred preservation { all side: Side | {
-	noJealousy[StateB, side] and noJealousy[StateC, side]
+	noJealousy[StateA, side]
+	noJealousy[StateB, side]
+	noJealousy[StateC, side]
 }}
-pred strategy {
-	-- assume we start in a preserved state
-	all side: Side | noJealousy[StateA, side]
-	-- ensure progress, preservation
+fact assuming { preservation }
+run progress {progress} for 5 Pet, 5 Owner, 5 Int
+run noProgress {not progress} for 5 Pet, 5 Owner, 5 Int
+pred reason { some nearToFar: StateA+StateB | some farToNear: StateA+StateB | {
+	nearToFar.sideof[Boat] = Near
+	farToNear.sideof[Boat] = Far
 	/* FILL */
-	#{p: Pet | crosses[p, StateA]} >= #{p: Pet | crosses[p, StateB]}
-}
-run strategySometimesWorks {
-	strategy and (progress and preservation)
-} for 5 Pet, 5 Owner, 5 Int
-check strategyAlwaysWorks {
-	strategy implies (progress and preservation)
-} for 5 Pet, 5 Owner, 5 Int
-check strategyAlwaysWorksBIG {
-	strategy implies (progress and preservation)
-} for exactly 10 Pet, exactly 10 Owner, 10 Int
+	-- more cross when the boat is Near than when the boat is Far
+	#{c: Character-Boat | crosses[c, nearToFar]} <= #{c: Character-Boat | crosses[c, farToNear]}
+}}
+check {reason implies (not progress)} for 5 Pet, 5 Owner, 5 Int
+check {(not progress) implies reason} for 5 Pet, 5 Owner, 5 Int

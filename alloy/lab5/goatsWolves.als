@@ -56,12 +56,12 @@ pred preservation { all side: Side | {
 fact assuming { preservation }
 run progress {progress} for 5 Goat, 5 Wolf, 5 Int
 run noProgress {not progress} for 5 Goat, 5 Wolf, 5 Int
-pred reason { some boatnear: StateA+StateB | some boatfar: StateA+StateB | {
-	boatnear.sideof[Boat] = Near
-	boatfar.sideof[Boat] = Far
+pred reason { some nearToFar: StateA+StateB | some farToNear: StateA+StateB | {
+	nearToFar.sideof[Boat] = Near
+	farToNear.sideof[Boat] = Far
 	/* FILL */
 	-- more cross when the boat is Near than when the boat is Far
-	#{c: Character-Boat | crosses[c, boatnear]} <= #{c: Character-Boat | crosses[c, boatfar]}
+	#{c: Character-Boat | crosses[c, nearToFar]} <= #{c: Character-Boat | crosses[c, farToNear]}
 }}
 check {reason implies (not progress)} for 5 Goat, 5 Wolf, 5 Int
 check {(not progress) implies reason} for 5 Goat, 5 Wolf, 5 Int
