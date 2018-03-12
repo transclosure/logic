@@ -39,7 +39,7 @@ pred correspondenceOfState[gwS: gw/State, poS: po/State] {
 pred correspondence {
 	-- All states in the relation correspond
 	all gwS: gw/State | all poS: po/State | {
-		gwS->poS in Correspondence.ofState <=> correspondenceOfState[gwS, poS]
+		gwS->poS in Correspondence.ofState implies correspondenceOfState[gwS, poS]
 	}
 }
 run {po/solvePuzzle and correspondence} for 12 but exactly 3 Pet, exactly 3 Owner
