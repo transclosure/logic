@@ -1,3 +1,7 @@
 /compiled
 *.dep
 *.zo
+*.lp
+*.mps
+__pycache__
+*.log
