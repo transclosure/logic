@@ -5,3 +5,4 @@
 *.mps
 __pycache__
 *.log
+*.jar
