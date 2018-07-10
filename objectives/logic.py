@@ -1,5 +1,7 @@
 from gurobipy import *
 
+# TODO remove globals make a class definition with parameters
+
 # Syntax
 sugarmap = {}
 

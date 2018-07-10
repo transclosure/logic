@@ -1,13 +1,13 @@
 from logic import *
 
-# Small SAT example from genconstr.py to test API 
+# Small UNSAT example
 lang = [
 	'x0',        
 	'x1',       
 	'x2',        
 	'x3'
 ]
-reset("Color SCCs")
+reset("unsat")
 for var in lang:
 	boolean(var)
 hard(['x0', 'x1', 'x2', 'x3'], "(x0 or x1 or x2 or x3)")

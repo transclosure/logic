@@ -7,7 +7,7 @@ lang = [
 	'x2',        
 	'x3'
 ]
-reset("Color SCCs")
+reset("sat")
 for var in lang:
 	boolean(var)
 hard(['x0', '!x1', 'x2'], "(x0 or ~x1 or x2)")
