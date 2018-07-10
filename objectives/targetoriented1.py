@@ -36,6 +36,6 @@ lang = [
 reset("Color SCCs")
 for var in lang:
 	boolean(var)
-#hard(["A", negate("B")], "A_or_!B")
+hard(["A", negate("B")], "A_or_!B")
 #TODO case study hard/soft constraints
 solve()
