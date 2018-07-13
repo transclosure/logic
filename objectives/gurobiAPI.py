@@ -2,6 +2,9 @@ from gurobipy import *
 
 # "language" operators
 def negate(lit):
+	if lit=="":
+		return lit
+	else:
 		return "!"+lit
 
 class GurobiSpec:
@@ -36,11 +39,10 @@ class GurobiSpec:
 			self.sugar(negate(name), nb)
 		return b
 
-	def addClause(self, clause, name):
-		name = name.replace(" ", "_")
-		c = self.addVariable(name, sweeten=False)
-		self.theory.addConstr(c == self.desugar(clause), name)
-		self.theory.addConstr(c == 1.0, name)
+	def addClause(self, clause):
+		c = self.addVariable("", sweeten=False)
+		self.theory.addConstr(c == self.desugar(clause), "")
+		self.theory.addConstr(c == 1.0, "")
 
 	def checksat(self):
 		sat = False
