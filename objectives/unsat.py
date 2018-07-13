@@ -1,4 +1,4 @@
-import gurobiAPI
+from gurobiAPI import *
 
 # Small UNSAT example
 lang = [

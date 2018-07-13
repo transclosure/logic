@@ -1,4 +1,4 @@
-import gurobiAPI
+from gurobiAPI import *
 
 # Small SAT example from genconstr.py
 lang = [
