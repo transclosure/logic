@@ -1,82 +1,82 @@
 from gurobipy import *
 
-# TODO remove globals make a class definition with parameters
+# "language" operators
+def negate(lit):
+		return "!"+lit
 
-# Syntax
-sugarmap = {}
+class GurobiSpec:
+	"""syntax to bridge LP (continuous numerics) and SAT (discrete logic) semantics"""
+	def __init__(self, name):
+		self.name 		= name
+		self.theory 	= Model(name)
+		self.sugarmap 	= {}
 
-def sugar(n, v):
-	global sugarmap
-	sugarmap[n] = v
+	def sugar(self, name, lit):
+		self.sugarmap[name] = lit
 
-def desugar(lits):
-	global sugarmap
-	clause = []
-	for l in lits:
-		clause.append(sugarmap[l]) 
-	return or_(clause)
+	def resugar(self, names):
+		# ASSUMES desugar NOT ONE TO MANY
+		resugarmap = {v: k for k, v in self.sugarmap.items()}
+		for l in lits:
+			clause.append(self.sugarmap[l]) 
+		return or_(clause)
 
-def negate(l):
-	return "!"+l
+	def desugar(self, lits):
+		clause = []
+		for l in lits:
+			clause.append(self.sugarmap[l]) 
+		return or_(clause)
 
-# Semantics
-T = None
-Tname = None
+	def addVariable(self, name, sweeten=True): 
+		b = self.theory.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=name)
+		nb = self.theory.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=negate(name))
+		self.theory.addConstr(b + nb == 1.0)
+		if sweeten:
+			self.sugar(name,b)
+			self.sugar(negate(name), nb)
+		return b
 
-def boolean(n): 
-	global T
-	b = T.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=n)
-	nb = T.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=negate(n))
-	T.addConstr(b + nb == 1.0)
-	sugar(n,b)
-	sugar(negate(n), nb)
-	return b
+	def addClause(self, clause, name):
+		name = name.replace(" ", "_")
+		c = self.addVariable(name, sweeten=False)
+		self.theory.addConstr(c == self.desugar(clause), name)
+		self.theory.addConstr(c == 1.0, name)
 
-def hard(clause, name):
-	global T
-	name = name.replace(" ", "_")
-	c = boolean(name)
-	T.addConstr(c == desugar(clause), name)
-	T.addConstr(c == 1.0, name)
+	def checksat(self):
+		sat = False
+		status = self.theory.getAttr(GRB.Attr.Status)
+		if status == GRB.INF_OR_UNBD:
+			status = "INFINITE OR UNBOUNDED"
+		elif status == GRB.INFEASIBLE:
+			status = "INFEASIBLE"
+		elif status == GRB.UNBOUNDED:
+			status = "UNBOUNDED"
+		elif status != GRB.OPTIMAL:
+			status = "Optimization was stopped with status "+status
+		elif status == GRB.OPTIMAL:
+			status = "OPTIMAL"
+			sat = True
+		else:
+			status = "UNKNOWN"
+		return sat
 
-def reset(n):
-	global T, Tname
-	T = Model(n)
-	Tname = n
-	return T
+	def getmodel(self):
+		for n in self.sugarmap.keys():
+			print(n, "=", self.sugarmap[n].x)
 
-def checksat():
-	sat = False
-	status = T.getAttr(GRB.Attr.Status)
-	if status == GRB.INF_OR_UNBD:
-		status = "INFINITE OR UNBOUNDED"
-	elif status == GRB.INFEASIBLE:
-		status = "INFEASIBLE"
-	elif status == GRB.UNBOUNDED:
-		status = "UNBOUNDED"
-	elif status != GRB.OPTIMAL:
-		status = "Optimization was stopped with status "+status
-	elif status == GRB.OPTIMAL:
-		status = "OPTIMAL"
-		sat = True
-	else:
-		status = "UNKNOWN"
-	print("STATUS:", status)
-	return sat
-
-def getmodel():
-	print("MODEL:")
-	for n in sugarmap.keys():
-		print(n, "=", sugarmap[n].x)
-
-def solve():
-	global T, Tname, sugarmap
-	try:
-		T.write(Tname+".mps")
-		T.write(Tname+".lp")
-		T.optimize()
-		if checksat(): getmodel()
-	except GurobiError as e:
-		print('Error code ' + str(e.errno) + ": " + str(e))
-	except AttributeError:
-		print('Encountered an attribute error')
+	def solve(self):
+		try:
+			self.theory.write(self.name+".mps")
+			self.theory.write(self.name+".lp")
+			self.theory.optimize()
+			if self.checksat(): 
+				print("SAT")
+				self.getmodel()
+			else:
+				print("UNSAT")
+		except GurobiError as e:
+			print("ERROR")
+			print('Error code ' + str(e.errno) + ": " + str(e))
+		except AttributeError:
+			print("ERROR")
+			print('Encountered an attribute error')

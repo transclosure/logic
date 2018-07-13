@@ -1,21 +1,17 @@
 from gurobiAPI import *
 
-# Small SAT example from genconstr.py
-lang = [
-	'x0',        
-	'x1',       
-	'x2',        
-	'x3'
-]
-reset("sat")
-for var in lang:
-	boolean(var)
-hard(['x0', '!x1', 'x2'], "(x0 or ~x1 or x2)")
-hard(['x1', '!x2', 'x3'], "(x1 or ~x2 or x3)")
-hard(['x2', '!x3', 'x0'], "(x2 or ~x3 or x0)")
-hard(['x3', '!x0', 'x1'], "(x3 or ~x0 or x1)")
-hard(['!x0', '!x1', 'x2'], "(~x0 or ~x1 or x2)")
-hard(['!x1', '!x2', 'x3'], "(~x1 or ~x2 or x3)")
-hard(['!x2', '!x3', 'x0'], "(~x2 or ~x3 or x0) ")
-hard(['!x3', '!x0', 'x1'], "(~x3 or ~x0 or x1)")
-solve()
+""" Small SAT example from genconstr.py """
+spec = GurobiSpec("sat")
+spec.addVariable('x0')
+spec.addVariable('x1')
+spec.addVariable('x2')
+spec.addVariable('x3')
+spec.addClause(['x0', '!x1', 'x2'], "(x0 or ~x1 or x2)")
+spec.addClause(['x1', '!x2', 'x3'], "(x1 or ~x2 or x3)")
+spec.addClause(['x2', '!x3', 'x0'], "(x2 or ~x3 or x0)")
+spec.addClause(['x3', '!x0', 'x1'], "(x3 or ~x0 or x1)")
+spec.addClause(['!x0', '!x1', 'x2'], "(~x0 or ~x1 or x2)")
+spec.addClause(['!x1', '!x2', 'x3'], "(~x1 or ~x2 or x3)")
+spec.addClause(['!x2', '!x3', 'x0'], "(~x2 or ~x3 or x0) ")
+spec.addClause(['!x3', '!x0', 'x1'], "(~x3 or ~x0 or x1)")
+spec.solve()

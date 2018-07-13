@@ -1,18 +1,14 @@
 from gurobiAPI import *
 
-# Small UNSAT example
-lang = [
-	'x0',        
-	'x1',       
-	'x2',        
-	'x3'
-]
-reset("unsat")
-for var in lang:
-	boolean(var)
-hard(['x0', 'x1', 'x2', 'x3'], "(x0 or x1 or x2 or x3)")
-hard(['!x0'], "(~x0)")
-hard(['!x1'], "(~x1)")
-hard(['!x2'], "(~x2)")
-hard(['!x3'], "(~x3)")
-solve()
+""" Small UNSAT example """
+spec = GurobiSpec("unsat")
+spec.addVariable('x0')
+spec.addVariable('x1')
+spec.addVariable('x2')
+spec.addVariable('x3')
+spec.addClause(['x0', 'x1', 'x2', 'x3'], "(x0 or x1 or x2 or x3)")
+spec.addClause(['!x0'], "(~x0)")
+spec.addClause(['!x1'], "(~x1)")
+spec.addClause(['!x2'], "(~x2)")
+spec.addClause(['!x3'], "(~x3)")
+spec.solve()
