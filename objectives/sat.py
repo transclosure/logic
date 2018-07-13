@@ -1,6 +1,6 @@
-from logic import *
+import gurobiAPI
 
-# Small SAT example from genconstr.py to test API 
+# Small SAT example from genconstr.py
 lang = [
 	'x0',        
 	'x1',       

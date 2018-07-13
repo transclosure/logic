@@ -1,4 +1,4 @@
-from logic import *
+import gurobiAPI
 
 # Small UNSAT example
 lang = [
