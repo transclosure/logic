@@ -1,3 +1,9 @@
+;; Logics
+;(set-logic QF_LIA)   ;smtlib linear int arith
+;(set-logic QF_BV)    ;smtlib bit vectors
+;(set-logic QF_UFDT)  ;cvc4 datatypes
+(set-logic ALL)       ;non-smtlib-standard multi-logic
+
 ;; Physical Layer
 (define-sort Intf () Int)
 (declare-const drop Intf)
@@ -11,41 +17,40 @@
 ;; Network Layer
 (define-sort Addr () (_ BitVec 32))
 ;; Request
-(declare-datatypes () ((Type IPv4 IPv6 TCP UDP ICMP)))
-(declare-datatypes () ((Request 
-  (packet (psrc Intf)
-          (nsrc Addr)
-          (ndst Addr)
-          (tsrc Port)
-          (tdst Port)
-          (proto Type))
-)))
+(declare-datatypes ((Type 0)) 
+  (((IPv4) (IPv6) (TCP) (UDP) (ICMP))))
+(declare-datatypes ((Request 0))
+  (((packet (psrc Intf) 
+            (nsrc Addr) 
+            (ndst Addr) 
+            (tsrc Port)
+            (tdst Port)
+            (proto Type)))))
+
 ;; Firewall
 (declare-fun firewall (Request) Intf)
 (declare-fun iptable (Intf) Addr)
 (assert (forall ((i Intf))
   (exists ((a Addr)) (= (iptable i) a))))
 (assert (forall ((iA Intf) (iB Intf))
-  (implies  (not (= iA iB)) 
+  (=>  (not (= iA iB)) 
             (not (= (iptable iA) (iptable iB))))))
-;; missing stateful assertion for all local devices (dont want to complicate model that much yet)
+;; missing stateful assertion for all local devices
 
 ;; Heating Element
 (assert (forall ((r Request))
-  (implies  (= (firewall r) heat)
+  (=>  (= (firewall r) heat)
             (= (psrc r) thermo))))
 
 ;; Thermostat
 (assert (forall ((r Request))
-  (implies  (= (psrc r) internet)
+  (=>  (= (psrc r) internet)
             (= (firewall r) drop))))
-
-;; timeout! strategy or CEGIS? 
-;;(assert (forall ((r Request))
-;;  (implies  (= (psrc r) thermo)
-;;            (exists ((p Request))
-;;              (and  (= (psrc p) (firewall r))
-;;                    (= (firewall p) thermo))))))
+(assert (forall ((r Request))
+  (=>  (= (psrc r) thermo)
+            (exists ((p Request))
+              (and  (= (psrc p) (firewall r))
+                    (= (firewall p) thermo))))))
 
 ;; PC
 
