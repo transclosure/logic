@@ -5,52 +5,54 @@
 (set-logic ALL)       ;non-smtlib-standard multi-logic
 
 ;; Physical Layer
-(define-sort Intf () Int)
-(declare-const drop Intf)
-(declare-const heat Intf)
-(declare-const thermo Intf)
-(declare-const pc Intf)
-(declare-const phone Intf)
-(declare-const internet Intf)
+(declare-datatypes ((Device 0)) 
+  (((heat) (thermo) (pc) (phone) (internet))))
+(define-sort Interface () Int)
+(declare-fun connected (Device) Interface)
+(assert (forall ((d Device))                      ;; total
+  (exists ((i Interface)) (= (connected d) i))))
+(assert (forall ((dA Device) (dB Device))         ;; one-to-one
+  (=> (not (= dA dB)) 
+      (not (= (connected dA) (connected dB))))))
+
 ;; Transport Layer
 (define-sort Port () Int)
 ;; Network Layer
-(define-sort Addr () (_ BitVec 32))
+(define-sort Address () (_ BitVec 32))
 ;; Request
-(declare-datatypes ((Type 0)) 
-  (((IPv4) (IPv6) (TCP) (UDP) (ICMP))))
+(declare-datatypes ((Protocol 0)) 
+  (((ipv4) (ipv6) (tcp) (udp) (icmp))))
 (declare-datatypes ((Request 0))
-  (((packet (psrc Intf) 
-            (nsrc Addr) 
-            (ndst Addr) 
+  (((packet (psrc Interface) 
+            (nsrc Address) 
+            (ndst Address) 
             (tsrc Port)
             (tdst Port)
-            (proto Type)))))
+            (proto Protocol)))))
 
 ;; Firewall
-(declare-fun firewall (Request) Intf)
-(declare-fun iptable (Intf) Addr)
-(assert (forall ((i Intf))
-  (exists ((a Addr)) (= (iptable i) a))))
-(assert (forall ((iA Intf) (iB Intf))
-  (=>  (not (= iA iB)) 
-            (not (= (iptable iA) (iptable iB))))))
-;; missing stateful assertion for all local devices
+(declare-fun firewall (Request)   Interface)
+(declare-fun iptable  (Interface) Address)
+(assert (forall ((i Interface))                   ;; total
+  (exists ((a Address)) (= (iptable i) a))))
+(assert (forall ((iA Interface) (iB Interface))   ;; one-to-one
+  (=>   (not (= iA iB))                         
+        (not (= (iptable iA) (iptable iB))))))
 
 ;; Heating Element
-(assert (forall ((r Request))
-  (=>  (= (firewall r) heat)
-            (= (psrc r) thermo))))
+;(assert (forall ((r Request))
+;  (=  (= (firewall r) heat)
+;      (= (psrc r) thermo))))
 
 ;; Thermostat
-(assert (forall ((r Request))
-  (=>  (= (psrc r) internet)
-            (= (firewall r) drop))))
-(assert (forall ((r Request))
-  (=>  (= (psrc r) thermo)
-            (exists ((p Request))
-              (and  (= (psrc p) (firewall r))
-                    (= (firewall p) thermo))))))
+;(assert (forall ((r Request))
+;  (=  (= (psrc r) internet)
+;      (= (firewall r) drop))))
+;(assert (forall ((r Request))
+;  (=  (= (psrc r) thermo)
+;      (exists ((p Request))
+;        (and  (= (psrc p) (firewall r))
+;              (= (firewall p) thermo))))))
 
 ;; PC
 
