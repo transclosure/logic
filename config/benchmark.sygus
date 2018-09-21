@@ -1,0 +1,29 @@
+(set-logic LIA)
+
+(synth-fun max2 ((x Int) (y Int)) Int
+  ((Start Int (0 1 x y
+              (+  Start  Start)
+              (- Start  Start)
+              (ite  StartBool  Start  Start )))
+    (StartBool Bool ( (and  StartBool  StartBool)
+                      (not  StartBool)
+                      (<=   Start  Start )))))
+
+(synth-fun  min2 ((x Int) (y Int)) Int
+  ((Start Int (   (Constant  Int) (Variable  Int)
+                  (+  Start  Start)
+                  (- Start  Start)
+                  (ite  StartBool  Start  Start )))
+    (StartBool  Bool ((and  StartBool  StartBool)
+                      (not  StartBool)
+                      (<=   Start  Start )))))
+
+(declare-var x Int)
+(declare-var y Int)
+(constraint (>= (max2 x y) x))
+(constraint (>= (max2 x y) y))
+(constraint (or (= x (max2 x y)) 
+                (or (= y (max2 x y)))))
+(constraint  (= (+ (max2 x y) (min2 x y))
+                (+ x y)))
+(check-synth)
