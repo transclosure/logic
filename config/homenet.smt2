@@ -1,20 +1,50 @@
 ;; Logics
-;(set-logic QF_LIA)   ;smtlib linear int arith
-;(set-logic QF_BV)    ;smtlib bit vectors
-;(set-logic QF_UFDT)  ;cvc4 datatypes
-(set-logic ALL)       ;non-smtlib-standard multi-logic
+;(set-logic QF_LIA)		;smtlib linr int arith (cegis)
+;(set-logic QF_LRA) 	;smtlib real int arith (cegis)
+;(set-logic QF_BV)    	;smtlib bit vectors (cegis support)
+;(set-logic QF_UFDT)  	;cvc4 datatypes (no cegis support)
+(set-logic UFLIA)   	;quantifiers + uninterp funct + lin int (cegis)
 
+;; Device
+(define-sort Device 	() Int)
+(declare-const heat 	Device)
+(declare-const thermo 	Device)
+(declare-const pc 		Device)
+(declare-const phone 	Device)
+(declare-const internet Device)
+(assert (= heat 	1))
+(assert (= thermo 	2))
+(assert (= pc 		3))
+(assert (= phone 	4))
+(assert (= internet 5))
+;; Interface
+(define-sort Interface 	() Int)
+(declare-const drop	Interface)
+(declare-const eth1	Interface)
+(declare-const eth2	Interface)
+(declare-const eth3 Interface)
+(declare-const eth4	Interface)
+(declare-const eth5	Interface)
+(declare-const eth6	Interface)
+(declare-const eth7 Interface)
+(assert (= drop 0))
+(assert (= eth1 1))
+(assert (= eth2 2))
+(assert (= eth3 3))
+(assert (= eth4 4))
+(assert (= eth5 5))
+(assert (= eth6 6))
+(assert (= eth7 7))
 ;; Physical Layer
-(declare-datatypes ((Device 0)) 
-  (((heat) (thermo) (pc) (phone) (internet))))
-(declare-datatypes ((Interface 0)) 
-  (((drop) (eth1) (eth2) (eth3) (eth4) (eth5) (eth6) (eth7))))
 (declare-fun connected (Device) Interface)
-(assert (forall ((d Device))                      ;; total
-  (exists ((i Interface)) (= (connected d) i))))
-(assert (forall ((dA Device) (dB Device))         ;; one-to-one
-  (=> (not (= dA dB)) 
-      (not (= (connected dA) (connected dB))))))
+(assert (forall ((d Device)) (exists ((i Interface)) 
+	(= (connected d) i))))
+(assert (forall ((dA Device) (dB Device))
+	(=> (= dA dB)
+      	(= (connected dA) (connected dB)))))
+(assert (forall ((dA Device) (dB Device))
+	(=> (= (connected dA) (connected dB))
+		(= dA dB))))
 
 ;; Transport Layer
 ;(define-sort Port () Int)
