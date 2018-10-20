@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<alloy>
+
+<view>
+
+<defaultnode/>
+
+<defaultedge/>
+
+<node>
+   <type name="Config"/>
+   <type name="Int"/>
+   <type name="Office"/>
+   <type name="Room"/>
+   <type name="State"/>
+   <type name="String"/>
+   <type name="univ"/>
+   <type name="boolean/Bool"/>
+   <type name="boolean/False"/>
+   <type name="boolean/True"/>
+   <type name="seq/Int"/>
+</node>
+
+<edge visible="no" attribute="yes">
+   <relation name="door"> <type name="State"/> <type name="boolean/Bool"/> </relation>
+   <relation name="temp"> <type name="State"/> <type name="Room"/> <type name="Int"/> </relation>
+</edge>
+
+</view>
+
+</alloy>
