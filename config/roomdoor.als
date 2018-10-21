@@ -1,19 +1,26 @@
 /*
     Heater problem with door:
     Room has an ambient temperature, a separate thermostat+heater.
-    There is a door to the outside that can be either open or closed at each timestep
+    There is an external door that can be either open or closed at each timestep
     Room loses 0 temperature unit per timestep if door is CLOSED, and 
-                       1 temperature units per timestep if door is OPEN
+         loses 1 temperature units per timestep if door is OPEN
+    Room gains 2 temperature units if temp is lower than the setting.
+	Actual difference = loss + gain.
+
+    Comfortable temperatures: 0, 1, and 2.
 
     Note that this model *doesn't* have an explicit heaton/heatoff value.
-
     The only source of non-determinism is the door, but that should be enough.
 
     I was planning on making this a 2-room model with a door between them, but
       even that was a problem re: scaling at 8 temp values per room. Leaving in
       the multi-room infrastructure in case we want to use it, though.
 
-    Comfortable temperatures: 0, 1, and 2.
+    In this model file, we make the transitions explicit, rather than implicit, so
+      that we can experiment with an "eventually always comfy" property variant in
+      the presence of nondeterminism. The property I'm checking isn't what we actually
+      want, but it's useful as a benchmark. See notes below.
+
 */
 
 open util/boolean
@@ -117,7 +124,10 @@ check transitionsTotal for 3 but exactly 16 State, 3 int
 -----------------------------------------------------------
 
 -- EF(AG(comfy))
--- not same as FGcomfy for all traces!
+-- not same as FGcomfy for all traces! This says that it is *possible*
+-- to reach a state from which it's always comfy. In other words, this 
+-- is neither the LTL FG(comfy) or the CTL AF(AG(comfy)). But it suffices
+-- to synthesize something interesting.
 pred EFAGComfy {
   all init: State | initial[init] implies {
     some c: init.^transitions | {
@@ -142,10 +152,17 @@ pred bruteForceNot1 {
   Config.T[Office] != 1
 }
 run bruteForceNot1 for 3 but exactly 16 State, 3 int
+-- T=2 doesn't work. If room temp = 1, then the heater will be on
+--   and heat by 2 degrees, producing an uncomfy room.
+-- T=0 doesn't work for similar reasons, in reverse. 
 
--- ??? Why isn't T = 2 working?
+-----------------------------------------------------------
+-- For counterexample search, see next spec. Since this spec
+-- encodes the wrong property, and bakes in transitions relation
+-- unnecessarily, need an entirely new file.
+
 -- ??? What complications got introduced via EF(AG(c)) instead of AF(AG(c))?
---    the right thing to do is probably treat the CTL* thing as a hack, and
+--    the right thing to do is probably treat the CTL thing as a hack, and
 --    verify via util/ordering in a separate module
 
 pred findCounterexampleToArbitraryPick {
