@@ -35,7 +35,7 @@ one sig Selfish extends Person {} {
 -- Configuration has two fields:
 --   (1) who has access to change the thermostat?
 --   (2) what range of temperatures will the thermostat accept?
-sig Config {
+one sig Config {
   canSet: set Person,
   allowed: set Int
 }
@@ -84,7 +84,11 @@ pred initial[s: State] {
 
 pred property {
   -- Does this trace satisfy G(comfy)?
-  all s: State | all p: Person | s.setting in p.comfyAt
+  all s: State | all p: Person | property_instance[s, p]
+}
+
+pred property_instance[s: State, p: Person] {
+  s.setting in p.comfyAt
 }
 
 -- Test: find a trace that satisfies the property
@@ -93,12 +97,64 @@ for 1 Config, 2 Person, 10 State, 8 int
 
 ---------------------------------------------------------
 
-pred counterexample {
+-- First CE
+pred counterexample_1 {
   -- find me some trace [ordering is implicit] 
   initial[first]
   trace
 
   -- NEGATE property: G(all users comfy)
   not property
+
+  -- but follow the previously synthesized configuration
+  -- [PLUG IN HERE]
+  Config.canSet = Person -- assume synth produced all allowable
+  Config.allowed = Int
 }
-run counterexample for 1 Config, 2 Person, 10 State, 8 int
+run counterexample_1 for 1 Config, 2 Person, 10 State, 8 int
+
+---------------------------------------------------------
+
+-- Second synth (assume first synth was just trivially maximizing permissions)
+pred synthesize_2 {
+  -- don't force ordering to do anything, we're not USING ordering (um, see below)
+  --   ? Is this the right call? Should we be in a separate module?
+
+  -- instantiate property for last counterexample
+  -- since we're doing this manually, TN logged witnesses: (State$1, Nice)
+  -- in order to get at "second state", we'll use the ordering...
+  property_instance[first.next, Nice] -- learned from CE1
+
+  -- PAY NO ATTENTION to the "trace" here, though! It's only the config settings
+  --   that matter....
+}
+run synthesize_2 for 1 Config, 2 Person, 10 State, 8 int
+
+---------------------------------------------------------
+
+-- Second CE
+pred counterexample_2 {
+  -- find me some trace [ordering is implicit] 
+  initial[first]
+  trace
+
+  -- NEGATE property: G(all users comfy)
+  not property
+
+  -- but follow the previously synthesized configuration
+  -- [PLUG IN HERE]
+  no Config.canSet
+  no Config.allowed
+}
+run counterexample_2 for 1 Config, 2 Person, 10 State, 8 int
+
+---------------------------------------------------------
+
+-- Q1: is there meaning to saying "State$1" at all, in a context outside of a single trace?
+--   "in all traces, after 1 hop" is NOT what we're saying! We're just setting an arbitrary variable...
+
+-- Q2: and yet, the solver produced a Config after 1 CE that would be sound.
+ ---  It just doesn't allow anything at all :-) 
+-- what happens if we add a property that somebody can always change the temp?
+
+
