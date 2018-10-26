@@ -136,10 +136,15 @@ pred synthesize_2 {
   --some Config.canSet
   -- but also need someone to WANT to change!
   some Config.canSet.comfyAt & Config.allowed
+  #Config.allowed > 2 -- really scramble things up by adding bitblasting + require more allowed
 }
 run synthesize_2 for 1 Config, 2 Person, 10 State, 8 int
 
 ---------------------------------------------------------
+
+fun synth2allowed[]: set Int {
+-100+-104+-108+-112+-116+-12+-120+-124+-128+-16+-20+-24+-28+-32+-36+-4+-40+-44+-48+-52+-56+-60+-64+-68+-72+-76+-8+-80+-84+-88+-92+-96+0+100+104+108+112+116+12+120+124+16+20+24+28+32+36+4+40+44+48+52+56+60+64+68+72+76+8+80+84+88+92+96
+}
 
 -- Second CE
 pred counterexample_2 {
@@ -153,19 +158,19 @@ pred counterexample_2 {
   -- but follow the previously synthesized configuration
   -- [PLUG IN HERE]
   Config.canSet = Selfish
-  Config.allowed = 60
+  Config.allowed = synth2allowed[]
 }
 run counterexample_2 for 1 Config, 2 Person, 10 State, 8 int
 
 ---------------------------------------------------------
 
--- QUESTION: 
---    is there meaning to saying "State$1" at all, in a context outside of a single trace?
---   "in all traces, after 1 hop" is NOT what we're saying! We're just setting an arbitrary variable...
---   So how is this part of the instantiation useful at all?
+-- I think this instantiation strategy is missing something important.
+-- Note that the instantiation is entirely unmoored from the system---
+-- the synth step isn't even using the trace predicate! I think there's a type
+-- error somewhere in our thinking. Might we consider, instead, something like:
 
--- OBSERVATION:
---   the solver wasn't prevented from adding more Config.allowed values; we just said that
---     Nice had to be comfy at State 1.
---  Would CEGIS do less well in a complementary situation?
--- I'm splitting off into another .als file for this...
+-- ce: get a trace T. this trace violates phi, period. nothing will change that. so
+-- synth: prevent T from being admitted by the system under Config.
+-- We'd have to force the existence of a lot of states, but FAR fewer than the platonic max.
+-- and say that they all "break" somewhere. Either their start state isnt a start state anymore
+--  or one of their transitions isn't valid anymore.
