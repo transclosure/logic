@@ -21,7 +21,7 @@ pred comfy[t : one Time] {
 	lte[t.temp, 75]
 	gte[t.temp, 70] 
 }
-// third-order existential: some starting comfy temperature S and thermostat setting T such that...
+// OUTER cegis loop: some starting comfy temperature S and thermostat setting T such that...
 one sig Config {
 	S: Int,
 	T: Int
@@ -33,7 +33,7 @@ pred synthConfig { all synth : Config | {
 	eq[first.temp, synth.S]
 	first.heat = False 
 }}
-// second-order existential: not some eventually uncomfy trace such that...
+// INNER cegis loop: not some eventually uncomfy trace such that...
 one sig Trace {
 	F: Time
 }
@@ -41,12 +41,12 @@ pred synthTrace { all synth : Trace | {
 	one synth.F
 	not comfy[synth.F]
 }}
-// first-order universal: all times are valid system behavior  
+// innermost verification goals: : all times are valid system behavior  
 pred verifySystem { all t : Time | {
 	one t.temp
 	one t.heat
 	t != last implies (t.heat = True implies heaton[t, Config.T] else heatoff[t, Config.T])
 }}
-// third-order cegis loop: synthConfig until synthTrace UNSAT (naiveSAT will return bad trace, not good synth)
-// second-order cegis loop: synthTrace until verifySystem SAT
+// OUTER cegis loop: synthConfig until synthTrace UNSAT (naiveSAT will return bad trace, not good synth)
+// INNER cegis loop: synthTrace until verifySystem SAT
 run cegis {synthConfig and synthTrace and verifySystem} for 1 Config, 1 Trace, 11 Time, 8 Int
