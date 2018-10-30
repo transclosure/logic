@@ -2,6 +2,7 @@
 Same as selfish3, except Picky.comfyAt is no longer a proper subset of Apath.comfyAt
 */
 open util/ordering[State]
+open util/boolean
 -- Two people, with different temperature preferences
 abstract sig Person { comfyAt: set Int }
 one sig Picky extends Person {} { comfyAt = {t: Int | t >= 60 and t <= 70} }
@@ -9,7 +10,8 @@ one sig Apath extends Person {} { comfyAt = {t: Int | t >= 65 and t <= 95} }
 -- Configuration has two fields:
 one sig Config {
   actors: set Person,	-- (1) who has access to change the thermostat?
-  actions: set Int		-- (2) what range of temperatures will the thermostat accept?
+  actions: set Int,		-- (2) what range of temperatures will the thermostat accept?
+  good: one Bool
 }
 -- Ordered set of state constants
 sig State {}
@@ -64,12 +66,10 @@ pred setter[t : one Trace, s : one State,
 pred valid_state[t : one Trace, s : one State] {
 	-- By design, don't constrain next_p and next_target fields of s'.
 	-- TODO: small issue, no repetition allowed in the trace!
-	{
-    	t.actor[s] in Config.actors 
-    	t.action[s] in Config.actions
-  	} 
-  	implies 	t.temp[s.next] = t.action[s]
-  	else    	t.temp[s.next] = t.temp[s]
+	(t.actor[s] in Config.actors and t.action[s] in Config.actions) 
+		implies t.temp[s.next] = t.action[s]
+  	!(t.actor[s] in Config.actors and t.action[s] in Config.actions)
+		implies t.temp[s.next] = t.temp[s]
 }
 pred valid_trace[t : one Trace] { 
 	all s: State - last | valid_state[t, s]
@@ -101,7 +101,9 @@ run verify_1 {
   	Config.actions = Int
 	-- find a valid trace that does not satisfy the property
 	valid_trace[Trace]
-	not good_trace[Trace]  
+	not good_trace[Trace]
+	(all s : State | all p: Person | Trace.temp[s] in p.comfyAt) implies Config.good = True
+	(not (all s : State | all p: Person | Trace.temp[s] in p.comfyAt)) implies Config.good = False
 }
 for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
 /*
