@@ -10,7 +10,10 @@ one sig Config {
 }
 -- Ordered set of state constants
 sig State {}
-one sig State1, State2, State3, State4, State5, State6, State7, State8, State9, State10 extends State {}
+one sig 
+	State1, State2, State3, State4, State5, 
+	State6, State7, State8, State9, State10 
+extends State {}
 fact {
 	State1 = first
 	State2 = State1.next
@@ -46,7 +49,8 @@ lone sig Trace2, Trace3, Trace4, Trace5 extends Trace {}
 fun getter[t : one Trace, s : one State] : {Int -> Person -> Int} {
 	{t.temp[s] -> t.actor[s] -> t.action[s]}
 }
-pred setter[t : one Trace, s : one State, stemp : one Int, sactor : one Person, saction : one Int ] {
+pred setter[t : one Trace, s : one State, 
+			stemp : one Int, sactor : one Person, saction : one Int ] {
 	t.temp[s] = stemp
 	t.actor[s] = sactor
 	t.action[s] = saction
@@ -80,9 +84,15 @@ for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
 
 ---------------------------------------------------------
 
-run verify_1 {
-	-- assuming
+pred assumptions {
+	-- non-trivial
 	good_state[Trace, first]
+	-- tension to prevent no permissions
+  	some Config.actors.comfyAt & Config.actions
+  	all p: Person | #(p.comfyAt & Config.actions) > 1
+}
+run verify_1 {
+	assumptions
 	-- given a maximally permissive config
 	Config.actors = Person
   	Config.actions = Int
@@ -90,16 +100,24 @@ run verify_1 {
 	valid_trace[Trace]
 	not good_trace[Trace]  
 }
-for 1 Config, 2 Person, 8 int, 10 State, 1 Trace 
+for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
+/*
+getter[Trace, State1] = 61, Apath, 90
+getter[Trace, State2] = 90, Picky, 90
+getter[Trace, State3] = 90, Picky, 90
+getter[Trace, State4] = 90, Picky, 90
+getter[Trace, State5] = 90, Picky, 90
+getter[Trace, State6] = 90, Picky, 90
+getter[Trace, State7] = 90, Picky, 90
+getter[Trace, State8] = 90, Picky, 90
+getter[Trace, State9] = 90, Picky, 90
+getter[Trace, State10] = 90, Picky, 90
+*/
 
 ---------------------------------------------------------
 
 run synth_invalidate_1 {
-	-- tension to prevent no permissions
-  	some Config.actors.comfyAt & Config.actions
-  	all p: Person | #(p.comfyAt & Config.actions) > 1
-	-- assuming
-	good_state[Trace, first]
+	assumptions
 	-- set BAD SUBSET OF verify_1 (not good_state), then invalidate
 	--setter[Trace1, State1, 61, Apath, 90]
 	setter[Trace1, State2, 90, Picky, 90]
@@ -114,14 +132,13 @@ run synth_invalidate_1 {
 	not valid_trace[Trace1]
 	not good_trace[Trace1]
 }
-for 1 Config, 2 Person, 8 int, 10 State, 1 Trace 
-
+for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
+/*
+Config.actors = Apath
+Config.actions = 60, 61, 88
+*/
 run synth_repair_1 {
-	-- tension to prevent no permissions
-  	some Config.actors.comfyAt & Config.actions
-  	all p: Person | #(p.comfyAt & Config.actions) > 1
-	-- assuming
-	good_state[Trace, first]
+	assumptions
 	-- set GOOD SUBSET OF verify_1 (good_state), then repair
 	setter[Trace1, State1, 61, Apath, 90]
 	--setter[Trace1, State2, 90, Picky, 90]
@@ -136,4 +153,42 @@ run synth_repair_1 {
 	valid_trace[Trace1]
 	good_trace[Trace1]
 }
-for 1 Config, 2 Person, 8 int, 10 State, 1 Trace 
+for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
+/*
+Config.actors = Picky
+Config.actions = 63, 64, 66, 68, 72, 76, 84, 85, 86, 87, 88, 90
+*/
+run synth_1 {
+	assumptions
+	-- set BAD SUBSET OF verify_1 (not good_state), then invalidate
+	--setter[Trace1, State1, 61, Apath, 90]
+	setter[Trace1, State2, 90, Picky, 90]
+	setter[Trace1, State3, 90, Picky, 90]
+	setter[Trace1, State4, 90, Picky, 90]
+	setter[Trace1, State5, 90, Picky, 90]
+	setter[Trace1, State6, 90, Picky, 90]
+	setter[Trace1, State7, 90, Picky, 90]
+	setter[Trace1, State8, 90, Picky, 90]
+	setter[Trace1, State9, 90, Picky, 90]
+	setter[Trace1, State10, 90, Picky, 90]
+	not valid_trace[Trace1]
+	not good_trace[Trace1]
+	-- set GOOD SUBSET OF verify_1 (good_state), then repair
+	setter[Trace2, State1, 61, Apath, 90]
+	--setter[Trace2, State2, 90, Picky, 90]
+	--setter[Trace2, State3, 90, Picky, 90]
+	--setter[Trace2, State4, 90, Picky, 90]
+	--setter[Trace2, State5, 90, Picky, 90]
+	--setter[Trace2, State6, 90, Picky, 90]
+	--setter[Trace2, State7, 90, Picky, 90]
+	--setter[Trace2, State8, 90, Picky, 90]
+	--setter[Trace2, State9, 90, Picky, 90]
+	--setter[Trace2, State10, 90, Picky, 90]
+	valid_trace[Trace2]
+	good_trace[Trace2]
+}
+for 1 Config, 2 Person, 8 int, 10 State, 2 Trace
+/*
+Config.actors = Picky
+Config.actions = 62, 63, 71, 72, 73, 74, 76, 80, 81, 82, 83, 84, 85, 86, 87, 89, 90
+*/
