@@ -94,7 +94,7 @@ pred assumptions {
   	some Config.actors.comfyAt & Config.actions
   	all p: Person | #(p.comfyAt & Config.actions) > 1
 }
-run verify_1 {
+pred verify_1 {
 	assumptions
 	-- given a maximally permissive config
 	Config.actors = Person
@@ -105,6 +105,10 @@ run verify_1 {
 	(all s : State | all p: Person | Trace.temp[s] in p.comfyAt) implies Config.good = True
 	(not (all s : State | all p: Person | Trace.temp[s] in p.comfyAt)) implies Config.good = False
 }
+run verify_1
+for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
+
+run testGood {verify_1 and Config.good = True}
 for 1 Config, 2 Person, 8 int, 10 State, 1 Trace
 /*
 getter[Trace, State1] = 66, Picky, 64
