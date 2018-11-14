@@ -58,6 +58,9 @@ pred synth {
 	-- tension to prevent no permissions
   	some first.policy.actors.comfyAt & first.policy.actions
   	all p : Person | #(p.comfyAt & 	first.policy.actions) > 1
+	-- cut down search space (takes forever without help)
+	all t : T | all a : t.policy.actions | a > 50 and a < 80
+	all t : T | t.policy.actors = A+B
 }
 // verify 	:= 	!( some Trace. G(valid) and !G(good) )
 // G(valid) := 	all T. valid[T]
