@@ -38,7 +38,7 @@ pred valid[t : one T] { t != first implies {
 	implies t.temp = t.action
 	else t.temp = t.prev.temp
 	-- mutation vulnerability
-	(t.action = 75 and not permitted[t.actor, t.action, t.prev.policy.actors, t.prev.policy.actions])
+	(t.action = 70 and not permitted[t.actor, t.action, t.prev.policy.actors, t.prev.policy.actions])
   	implies (t.policy.actors = Person and t.policy.actions = Int)
   	else (t.policy.actors = t.prev.policy.actors and t.policy.actions = t.prev.policy.actions)
 }}
