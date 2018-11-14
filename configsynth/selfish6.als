@@ -1,5 +1,5 @@
 /*
-Same as selfish4, trying out new learning strategies and cegis scripting
+selfish5 + stateful
 */
 open util/ordering[T]
 // Two people, with different temperature preferences
@@ -13,8 +13,9 @@ sig Config {
 }
 // Moore-style Trace
 sig T {
-	actor: one Person,		-- actor tries to change the setting
+	home: set Person,		-- STATEFUL: people at home need to be comfy
 	policy: one Config,		-- IMMUTABLE: config static over time
+	actor: one Person,		-- actor tries to change the setting
   	action: one Int,		-- config can either allow or deny
 	temp: one Int,			-- resulting thermostat setting
 }
@@ -32,7 +33,7 @@ pred permitted[	pactor : one Person, paction : one Int,
 	paction in pactions
 }
 pred valid[t : one T] { t != first implies { 
-	permitted[t.actor, t.action, Config.actors, Config.actions]
+	t.actor in t.home and permitted[t.actor, t.action, Config.actors, Config.actions]
 	implies t.temp = t.action
 	else t.temp = t.prev.temp
 }}
@@ -63,15 +64,15 @@ pred verify[cactors : set Person, cactions : set Int] {
 	Config.actors = cactors
 	Config.actions = cactions
 	all t : T | valid[t]
-	some t : T | some p : Person | not good[t, p]
+	some t : T | some p : t.home | not good[t, p]
 }
 // Synth learning
 fun permitted_1[t : one T] : lone Person {
-	(some p : Person | not good[t, p]) 	implies t.actor
+	(some p : t.home | not good[t, p]) 	implies t.actor
 										else none
 }
 fun permitted_2[t : one T] : lone Int {
-	(some p : Person | not good[t, p]) 	implies t.action
+	(some p : t.home | not good[t, p]) 	implies t.action
 										else none
 }
 

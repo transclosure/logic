@@ -1,5 +1,5 @@
 /*
-Same as selfish4, trying out new learning strategies and cegis scripting
+selfish6 + mutable
 */
 open util/ordering[T]
 // Two people, with different temperature preferences
@@ -13,8 +13,9 @@ sig Config {
 }
 // Moore-style Trace
 sig T {
+	home: set Person,		-- STATEFUL: people at home need to be comfy
+	policy: one Config,		-- MUTABLE: config changes over time
 	actor: one Person,		-- actor tries to change the setting
-	policy: one Config,		-- IMMUTABLE: config static over time
   	action: one Int,		-- config can either allow or deny
 	temp: one Int,			-- resulting thermostat setting
 }
@@ -32,17 +33,20 @@ pred permitted[	pactor : one Person, paction : one Int,
 	paction in pactions
 }
 pred valid[t : one T] { t != first implies { 
-	permitted[t.actor, t.action, Config.actors, Config.actions]
+	-- normal behavior
+	(t.actor in t.home and permitted[t.actor, t.action, t.policy.actors, t.policy.actions])
 	implies t.temp = t.action
 	else t.temp = t.prev.temp
+	-- mutation vulnerability
+	(t.action = 75 and not permitted[t.actor, t.action, t.prev.policy.actors, t.prev.policy.actions])
+  	implies (t.policy.actors = Person and t.policy.actions = Int)
+  	else (t.policy.actors = t.prev.policy.actors and t.policy.actions = t.prev.policy.actions)
 }}
 pred good[t : one T, p : one Person] {
 	t.temp in p.comfyAt
 }
 // Query 	:= 	assume. synth. verify.
 pred assume {
-	-- immutable config
-	all t : T - first | t.policy = first.policy
 	-- Actors make sensible actions (reduce platonic states)
   	all t : T | t.action in t.actor.comfyAt
 	-- non-trivial
@@ -52,26 +56,26 @@ pred assume {
 pred synth {
 	assume
 	-- tension to prevent no permissions
-  	some Config.actors.comfyAt & Config.actions
-  	all p : Person | #(p.comfyAt & Config.actions) > 1
+  	some first.policy.actors.comfyAt & first.policy.actions
+  	all p : Person | #(p.comfyAt & 	first.policy.actions) > 1
 }
 // verify 	:= 	!( some Trace. G(valid) and !G(good) )
 // G(valid) := 	all T. valid[T]
 // !G(good)	:= 	!( all T. (all Person. good[T, Person]) )
 pred verify[cactors : set Person, cactions : set Int] {
 	assume
-	Config.actors = cactors
-	Config.actions = cactions
+	first.policy.actors = cactors
+	first.policy.actions = cactions
 	all t : T | valid[t]
-	some t : T | some p : Person | not good[t, p]
+	some t : T | some p : t.home | not good[t, p]
 }
 // Synth learning
 fun permitted_1[t : one T] : lone Person {
-	(some p : Person | not good[t, p]) 	implies t.actor
+	(some p : t.home | not good[t, p]) 	implies t.actor
 										else none
 }
 fun permitted_2[t : one T] : lone Int {
-	(some p : Person | not good[t, p]) 	implies t.action
+	(some p : t.home | not good[t, p]) 	implies t.action
 										else none
 }
 
