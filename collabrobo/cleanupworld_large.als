@@ -292,12 +292,15 @@ abstract sig Room extends Thing {}
 abstract sig Wall extends Room {} {}
 abstract sig Landmark extends Thing {}
 --
-one sig RedRoom extends Room {} { at = g4w1n+g4w2n+g4w3n+g3w1n+g3w2n+g3w3n+g2w1n+g2w2n+g2w3n+g1w1n+g1w2n+g1w3n }
-one sig GreenRoom extends Room {} { at = g1e1n+g1e2n+g1e3n+g2e1n+g2e2n+g2e3n+g3e1n+g3e2n+g3e3n }
-one sig BlueRoom extends Room {} { at = g4w4s+g4w3s+g4w2s+g4w1s+g3w4s+g3w3s+g3w2s+g3w1s+g2w4s+g2w3s+g2w2s+g2w1s+g1w4s+g1w3s+g1w2s+g1w1s+g004s+g003s+g002s+g001s+g1e4s+g1e3s+g1e2s+g1e1s+g2e4s+g2e3s+g2e2s+g2e1s+g3e4s+g3e3s+g3e2s+g3e1s }
+one sig PurpleRoom extends Room {} { at = g4e7s+g5e7s+g4e6s+g5e6s+g4e5s+g5e5s+g4e4s+g5e4s+g4e3s+g5e3s+g4e2s+g5e2s+g4e1s+g5e1s+g4e00+g5e00+g4e1n+g5e1n+g4e2n+g5e2n }
+one sig YellowRoom extends Room {} { at = g4w1n+g2w1n+g1w1n+g001n+g1e1n+g2e1n+g3e1n }
+one sig GreenRoom extends Room {} { at = g3e3n+g4e3n+g5e3n+g6e3n+g3e4n+g4e4n+g5e4n+g6e4n+g3e5n+g4e5n+g5e5n+g6e5n+g3e6n+g4e6n+g5e6n+g6e6n }
+one sig BlueRoom extends Room {} { at = g4w4n+g4w5n+g3w4n+g3w5n+g2w4n+g2w5n+g1w4n+g1w5n+g004n+g005n+g1e4n+g1e5n+g2e4n+g2e5n }
+one sig OrangeRoom extends Room {} { at = g7w1n+g6w1n+g5w1n+g7w2n+g6w2n+g5w2n+g7w3n+g6w3n+g5w3n+g7w4n+g6w4n+g5w4n+g7w5n+g6w5n+g5w5n+g7w6n+g6w6n+g5w6n }
 --
-one sig HWall extends Wall {} { at = g4w00+g1w00+g0000+g1e00+g3e00 }
-one sig VWall extends Wall {} { at = g0000+g001n+g003n }
+one sig Walls extends Wall {} 
+fact { Walls.at = (Grid - (PurpleRoom.at + YellowRoom.at + GreenRoom.at + BlueRoom.at + OrangeRoom.at))  }
+--
 /*
 Robot Trace
 */
@@ -315,97 +318,259 @@ pred south[t:Time, st:Time] { Robot.where[st].x = Robot.where[t].x and Robot.whe
 /*
 LTL goals
 */
-// ~ ( red_room ) U ( green_room )
-pred notRedRoomUntilGreenRoom { some u:Time | {
-	all t:u.^prev-u | Robot.where[t] not in RedRoom.at
-	Robot.where[u] in GreenRoom.at
+// ~ ( green_room ) U ( orange_room )
+pred notGreenRoomUntilOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] not in GreenRoom.at
+	Robot.where[u] in OrangeRoom.at
 }}
-// F ( red_room ) U ( green_room )
-pred eventuallyRedRoomUntilGreenRoom { some u:Time | {
-	some t:u.^prev-u | Robot.where[t] in RedRoom.at
-	Robot.where[u] in GreenRoom.at
-}}
-// F ( green_room ) U ( green_room )
-pred eventuallyGreenRoomUntilGreenRoom { some u:Time | {
+// F ( green_room ) U ( orange_room )
+pred eventuallyGreenRoomUntilOrangeRoom { some u:Time | {
 	some t:u.^prev-u | Robot.where[t] in GreenRoom.at
-	Robot.where[u] in GreenRoom.at
+	Robot.where[u] in OrangeRoom.at
 }}
-// ~ ( red_room ) & ( green_room )
-pred notRedRoomAndGreenRoom {
-    Robot.where[first] not in RedRoom.at
-	Robot.where[first] in GreenRoom.at
+// ~ ( orange_room ) U ( orange_room )
+pred notOrangeRoomUntilOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] not in OrangeRoom.at
+	Robot.where[u] in OrangeRoom.at
+}}
+// F ( orange_room ) U ( orange_room )
+pred eventuallyOrangeRoomUntilOrangeRoom { some u:Time | {
+	some t:u.^prev-u | Robot.where[t] in OrangeRoom.at
+	Robot.where[u] in OrangeRoom.at
+}}
+// ~ ( yellow_room ) U ( orange_room )
+pred notYellowRoomUntilOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] not in YellowRoom.at
+	Robot.where[u] in OrangeRoom.at
+}}
+// F ( yellow_room ) U ( orange_room )
+pred eventuallyYellowRoomUntilOrangeRoom { some u:Time | {
+	some t:u.^prev-u | Robot.where[t] in YellowRoom.at
+	Robot.where[u] in OrangeRoom.at
+}}
+// ( ( green_room ) U G orange_room )
+pred greenRoomUntilOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] in GreenRoom.at
+	Robot.where[u] in OrangeRoom.at
+}}
+// ( ( orange_room ) U G orange_room )
+pred orangeRoomUntilAlwaysOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] in OrangeRoom.at
+	all t:u.^next | Robot.where[t] in OrangeRoom.at
+}}
+// ( ( yellow_room ) U G orange_room )
+pred yellowRoomUntilAlwaysOrangeRoom { some u:Time | {
+	all t:u.^prev-u | Robot.where[t] in YellowRoom.at
+	all t:u.^next | Robot.where[t] in OrangeRoom.at
+}}
+// ~ ( green_room & F G orange_room )
+// ~ green_room || G F ~ orange_room
+pred notGreenRoomOrAlwaysEventuallyNotOrangeRoom { Robot.where[Time] not in GreenRoom.at or {
+	some t:Time | Robot.where[t] not in OrangeRoom.at
+}}
+// F ( green_room & F G orange_room )
+pred eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom {
+	some t:Time | Robot.where[t] in GreenRoom.at
+	some t:Time | all g:t.^next | Robot.where[g] in OrangeRoom.at
 }
-// F ( red_room ) & ( green_room )
-pred eventuallyRedRoomAndGreenRoom {
-	some t:Time | Robot.where[t] in RedRoom.at
-	Robot.where[first] in GreenRoom.at
-}
-// ~ ( green_room ) & ( green_room )
-pred notGreenRoomAndGreenRoom {
-	Robot.where[first] not in GreenRoom.at
-	Robot.where[first] in GreenRoom.at
-}
+// ~ ( orange_room & F G orange_room )
+// ~ orange_room || G F ~ orange_room
+pred notOrangeRoomOrAlwaysEventuallyNotOrangeRoom { Robot.where[Time] not in OrangeRoom.at or {
+	some t:Time | Robot.where[t] not in OrangeRoom.at
+}}
 --
 /*
 Semantic Differencing
 */
-// satisfy ~ ( red_room ) U ( green_room ), minimize satisfaction of others
+// satisfy notGreenRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s
-	notRedRoomUntilGreenRoom
-	soft (not eventuallyRedRoomUntilGreenRoom)
-	soft (not eventuallyGreenRoomUntilGreenRoom)
-	soft (not notRedRoomAndGreenRoom)
-	soft (not eventuallyRedRoomAndGreenRoom)
-	soft (not notGreenRoomAndGreenRoom)
-} for 4 Int, 11 Time, 5 Thing
-// satisfy F ( red_room ) U ( green_room ), minimize satisfaction of others
+	Robot.where[first] = g4e7s
+	notGreenRoomUntilOrangeRoom
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy eventuallyGreenRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s
-	soft (not notRedRoomUntilGreenRoom)
-	eventuallyRedRoomUntilGreenRoom
-	soft (not eventuallyGreenRoomUntilGreenRoom)
-	soft (not notRedRoomAndGreenRoom)
-	soft (not eventuallyRedRoomAndGreenRoom)
-	soft (not notGreenRoomAndGreenRoom)
-} for 4 Int, 11 Time, 5 Thing
-// satisfy F ( green_room ) U ( green_room ), minimize satisfaction of others
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	eventuallyGreenRoomUntilOrangeRoom
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy notOrangeRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s
-	soft (not notRedRoomUntilGreenRoom) 			
-	soft (not eventuallyRedRoomUntilGreenRoom)
-	eventuallyGreenRoomUntilGreenRoom
-	soft (not notRedRoomAndGreenRoom)
-	soft (not eventuallyRedRoomAndGreenRoom)
-	soft (not notGreenRoomAndGreenRoom)
-} for 4 Int, 15 Time, 5 Thing
-// satisfy ~ ( red_room ) & ( green_room ), minimize satisfaction of others
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	notOrangeRoomUntilOrangeRoom
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy eventuallyOrangeRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s				
-	soft (not notRedRoomUntilGreenRoom)			
-	soft (not eventuallyRedRoomUntilGreenRoom)	
-	soft (not eventuallyGreenRoomUntilGreenRoom)
-	notRedRoomAndGreenRoom				
-	soft (not eventuallyRedRoomAndGreenRoom)
-	soft (not notGreenRoomAndGreenRoom)
-} for 4 Int, 15 Time, 5 Thing
-// satisfy F ( red_room ) & ( green_room ), minimize satisfaction of others
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	eventuallyOrangeRoomUntilOrangeRoom
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy notYellowRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s
-	soft (not notRedRoomUntilGreenRoom)			
-	soft (not eventuallyRedRoomUntilGreenRoom)		
-	soft (not eventuallyGreenRoomUntilGreenRoom)
-	soft (not notRedRoomAndGreenRoom)
-	eventuallyRedRoomAndGreenRoom
-	soft (not notGreenRoomAndGreenRoom)
-} for 4 Int, 15 Time, 5 Thing
-// satisfy ~ ( green_room ) & ( green_room ), minimize satisfaction of others
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	notYellowRoomUntilOrangeRoom
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy eventuallyYellowRoomUntilOrangeRoom, minimize satisfaction of others
 run {
-	Robot.where[first] = g3w4s
-	soft (not notRedRoomUntilGreenRoom)			
-	soft (not eventuallyRedRoomUntilGreenRoom)	
-	soft (not eventuallyGreenRoomUntilGreenRoom)
-	soft (not notRedRoomAndGreenRoom)
-	soft (not eventuallyRedRoomAndGreenRoom)
-	notGreenRoomAndGreenRoom
-} for 4 Int, 15 Time, 5 Thing
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	eventuallyYellowRoomUntilOrangeRoom
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy greenRoomUntilOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	greenRoomUntilOrangeRoom
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy orangeRoomUntilAlwaysOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	orangeRoomUntilAlwaysOrangeRoom
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy yellowRoomUntilAlwaysOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	yellowRoomUntilAlwaysOrangeRoom
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy notGreenRoomOrAlwaysEventuallyNotOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	notGreenRoomOrAlwaysEventuallyNotOrangeRoom
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom
+	soft (not notOrangeRoomOrAlwaysEventuallyNotOrangeRoom)
+} for 4 Int, 6 Thing, 20 Time
+// satisfy notOrangeRoomOrAlwaysEventuallyNotOrangeRoom, minimize satisfaction of others
+run {
+	Robot.where[first] = g4e7s
+	soft (not notGreenRoomUntilOrangeRoom)
+	soft (not eventuallyGreenRoomUntilOrangeRoom)
+	soft (not notOrangeRoomUntilOrangeRoom)
+	soft (not eventuallyOrangeRoomUntilOrangeRoom)
+	soft (not notYellowRoomUntilOrangeRoom)
+	soft (not eventuallyYellowRoomUntilOrangeRoom)
+	soft (not greenRoomUntilOrangeRoom)
+	soft (not orangeRoomUntilAlwaysOrangeRoom)
+	soft (not yellowRoomUntilAlwaysOrangeRoom)
+	soft (not notGreenRoomOrAlwaysEventuallyNotOrangeRoom)
+	soft (not eventuallyGreenRoomAndEventuallyAlwaysOrangeRoom)
+	notOrangeRoomOrAlwaysEventuallyNotOrangeRoom
+} for 4 Int, 6 Thing, 20 Time
