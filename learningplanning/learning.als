@@ -1,37 +1,56 @@
+open util/boolean
 open util/ordering[Time]
-// Example Traces
+// for all time, for all example traces...
 sig Time {}
 abstract sig Example { istrue: Time -> set PROP }
-one sig E1 extends Example {} {
-	all t:Time | no istrue[t]
-}
-// LTL Syntax
-one sig Learned { formula: one LTL }
-abstract sig LTL {} 
-abstract sig PROP extends LTL {}
+// LTL Syntax (sigs) and LTL Semantics (accepts relation as sigfacts)
+abstract sig LTL {accepts: Example -> Time -> Bool}
+abstract sig PROP extends LTL {} {all t:Time | all e:Example | {
+	(no e.istrue[t])									implies accepts[e,t]=True
+	(some e.istrue[t] and this = e.istrue[t]) 			implies accepts[e,t]=True
+	(some e.istrue[t] and this != e.istrue[t]) 			implies accepts[e,t]=False
+}}
+sig Disjunct extends LTL { dsubs: some LTL } {all t:Time | all e:Example | {
+	(some sub:dsubs | sub.@accepts[e,t]=True) 			implies accepts[e,t]=True
+	(all sub:dsubs | sub.@accepts[e,t]=False) 			implies accepts[e,t]=False
+}}
+sig Conjunct extends LTL { csubs: some LTL } {all t:Time | all e:Example | {
+	(all sub:csubs | sub.@accepts[e,t]=True)			implies accepts[e,t]=True
+	(some sub:csubs | sub.@accepts[e,t]=False)			implies accepts[e,t]=False
+}}
+sig X extends LTL { xsub: one LTL } {all t:Time | all e:Example | {
+	(xsub.@accepts[e,t.next]=True)						implies accepts[e,t]=True
+	(xsub.@accepts[e,t.next]=False)						implies accepts[e,t]=False
+}}
+sig F extends LTL { fsub: one LTL } {all t:Time | all e:Example | {
+	(some f:t+t.^next | fsub.@accepts[e,f]=True)		implies accepts[e,t]=True
+	(all f:t+t.^next | fsub.@accepts[e,f]=False)		implies accepts[e,t]=False
+}}
+sig G extends LTL { gsub: one LTL } {all t:Time | all e:Example | {
+	(all g:t+t.^next | gsub.@accepts[e,g]=True)			implies accepts[e,t]=True
+	(some g:t+t.^next | gsub.@accepts[e,g]=False)		implies accepts[e,t]=False
+}}
+sig U extends LTL { left: one LTL, right: one LTL } {all t:Time | all e:Example | {
+	((all p:(t.^prev-t) | left.@accepts[e,p]=False) or right.@accepts[e,t]=True) implies accepts[e,t]=True
+	((some p:(t.^prev-t) | left.@accepts[e,p]=False) or right.@accepts[e,t]=False) implies accepts[e,t]=False
+}}
+// LTL learning from Example demonstration traces
 one sig p,q,r,u,v,w extends PROP {}
-sig Disjunct extends LTL { dsubs: set PROP }
-sig Conjunct extends LTL { csubs: set LTL }
-sig X extends LTL { xsub: one LTL } 
-sig F extends LTL { fsub: one LTL }
-sig G extends LTL { gsub: one LTL }
-sig U extends LTL { left: one LTL, right: one LTL }
-// LTL Semantics
-pred accept(e:Example) { Saccept[Learned.formula, e, first] }
-pred Saccept(l: one LTL, e: one Example, t: set Time) {
-	l in (Disjunct+Conjunct+X+F+G+U)
-	l in Disjunct implies Daccept[l, e, t]
-	l in Conjunct implies Caccept[l, e, t]
-	l in X implies Xaccept[l, e, t]
-	l in F implies Faccept[l, e, t]
-	l in G implies Gaccept[l, e, t]
-	l in U implies Uaccept[l, e, t]
+one sig E1 extends Example {} {
+	all t:Time | some prop:PROP | istrue[t] = prop
 }
-pred Daccept(l: one LTL, e: one Example, t: set Time) {}
-pred Caccept(l: one LTL, e: one Example, t: set Time) {}
-pred Xaccept(l: one LTL, e: one Example, t: set Time) {}
-pred Faccept(l: one LTL, e: one Example, t: set Time) {}
-pred Gaccept(l: one LTL, e: one Example, t: set Time) {}
-pred Uaccept(l: one LTL, e: one Example, t: set Time) {}
-// Learn
-run {accept[E1]} for 10 Time, 10 LTL
+one sig E2 extends Example {} {
+	all t:Time | some prop:PROP | istrue[t] = prop
+}
+one sig LEARNED {formula: one LTL} 
+run {
+	all l:LTL | {
+		-- tree structure
+		l not in l.^(dsubs+csubs+xsub+fsub+gsub+left+right)
+		l in LEARNED.formula.^(dsubs+csubs+xsub+fsub+gsub+left+right)+LEARNED.formula
+		-- must not be useless subformula
+		some t:Time | some e:Example | l.accepts[e][t]=True
+	}
+	LEARNED.formula.accepts[E1][first]=True
+	LEARNED.formula.accepts[E2][first]=True
+} for 10 Time, 10 LTL, 5 Int
