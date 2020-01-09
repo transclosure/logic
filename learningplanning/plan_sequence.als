@@ -32,8 +32,7 @@ sig Time {
 	movee: Taxi -> one Bool,
 	movew: Taxi -> one Bool,
 	pickup: Taxi -> one Bool,
-	dropoff: Taxi -> one Bool,
-	noop: Taxi -> one Bool
+	dropoff: Taxi -> one Bool
 }
 -- RDDL: cdf { ... } MANUALLY TRANSPOSED TO ACTION CENTRIC, TAXI CENTRIC
 pred fix_taxix[s:Time,ss:Time,t:Taxi] { ss.taxix[t]=s.taxix[t] }
@@ -42,16 +41,24 @@ pred fix_passx[s:Time,ss:Time,p:Pass] { ss.passx[p]=s.passx[p] }
 pred fix_passy[s:Time,ss:Time,p:Pass] { ss.passy[p]=s.passy[p] }
 pred fix_pint[s:Time,ss:Time,p:Pass,t:Taxi] { ss.pint[p,t]=s.pint[p,t] }
 pred noop[s:Time,ss:Time] {
-	all t:Taxi | s.noop[t]=True
+	all t:Taxi | {
+		s.pickup[t]=False
+		s.dropoff[t]=False
+		s.movee[t]=False
+		s.movew[t]=False
+		s.moven[t]=False
+		s.moves[t]=False
+	}
 	all tt:Taxi | fix_taxix[s,ss,tt]
 	all tt:Taxi | fix_taxiy[s,ss,tt]
 	all pp:Pass | fix_passx[s,ss,pp]
 	all pp:Pass | fix_passy[s,ss,pp]
 	all pp:Pass | all tt:Taxi | fix_pint[s,ss,pp,tt]
 }
-pred pickup[s:Time,ss:Time] { one t:Taxi | one p:Pass | {
+pred pickup[s:Time,ss:Time] { some t:Taxi | some p:Pass | {
 	s.taxix[t]=s.passx[p]
 	s.taxiy[t]=s.passy[p] 
+	s.pint[p,t]=False
 	s.pickup[t]=True
 	all tt:Taxi | fix_taxix[s,ss,tt]
 	all tt:Taxi | fix_taxiy[s,ss,tt]
@@ -61,7 +68,7 @@ pred pickup[s:Time,ss:Time] { one t:Taxi | one p:Pass | {
 	all tt:Taxi-t | fix_pint[s,ss,p,tt]
 	all pp:Pass-p | all tt:Taxi | fix_pint[s,ss,pp,tt]
 }}
-pred dropoff[s:Time,ss:Time] { one t:Taxi | one p:Pass | {
+pred dropoff[s:Time,ss:Time] { some t:Taxi | some p:Pass | {
 	s.pint[p,t]=True 
 	s.dropoff[t]=True
 	all tt:Taxi | fix_taxix[s,ss,tt]
@@ -72,7 +79,7 @@ pred dropoff[s:Time,ss:Time] { one t:Taxi | one p:Pass | {
 	all tt:Taxi-t | fix_pint[s,ss,p,tt]
 	all pp:Pass-p | all tt:Taxi | fix_pint[s,ss,pp,tt]
 }}
-pred movee[s:Time,ss:Time] { one t:Taxi | {
+pred movee[s:Time,ss:Time] { some t:Taxi | {
 	-- no east wall
 	s.movee[t]=True
 	ss.taxix[t]=plus[s.taxix[t],1]
@@ -83,7 +90,7 @@ pred movee[s:Time,ss:Time] { one t:Taxi | {
 	all p:Pass | fix_passy[s,ss,p]
 	all p:Pass | all tt:Taxi | fix_pint[s,ss,p,tt]
 }}
-pred movew[s:Time,ss:Time] { one t:Taxi | {
+pred movew[s:Time,ss:Time] { some t:Taxi | {
 	-- no west wall
 	s.movew[t]=True
 	ss.taxix[t]=minus[s.taxix[t],1]
@@ -94,7 +101,7 @@ pred movew[s:Time,ss:Time] { one t:Taxi | {
 	all p:Pass | fix_passy[s,ss,p]
 	all p:Pass | all tt:Taxi | fix_pint[s,ss,p,tt]
 }}
-pred moven[s:Time,ss:Time] { one t:Taxi | {
+pred moven[s:Time,ss:Time] { some t:Taxi | {
 	-- no north wall
 	s.moven[t]=True
 	all tt:Taxi | fix_taxix[s,ss,tt]
@@ -105,7 +112,7 @@ pred moven[s:Time,ss:Time] { one t:Taxi | {
 	all p:Pass | s.pint[p,t]=False implies fix_passy[s,ss,p]
 	all p:Pass | all tt:Taxi | fix_pint[s,ss,p,tt]
 }}
-pred moves[s:Time,ss:Time] { one t:Taxi | {
+pred moves[s:Time,ss:Time] { some t:Taxi | {
 	-- no south wall
 	s.moves[t]=True
 	all tt:Taxi | fix_taxix[s,ss,tt]
@@ -147,6 +154,8 @@ pred initial[s:Time] {
 	s.pint[P9,T]=False
 }
 pred goal[s:Time] {
+	s.taxix[T]=1
+	s.taxiy[T]=0
 	s.passx[P7]=1
 	s.passy[P7]=0
 	s.pint[P7,T]=False
@@ -162,12 +171,12 @@ fun num_actions[s:one Time,t:Taxi] : one Int {
 			plus[#(s.movew[t]&True),
 				plus[#(s.movee[t]&True),
 					plus[#(s.moves[t]&True),
-						plus[#(s.moven[t]&True),
-							#(s.noop[t]&True)]]]]]]
+							#(s.moven[t]&True)]]]]]
 }
 pred sequence {
 	all t:Taxi | {
-		all s:Time-last | num_actions[s,t] = 1
+		all s:Time-first | !initial[s] implies num_actions[s.prev,t] = 1
+		all s:Time-first | initial[s] implies num_actions[s.prev,t] = 0
 		num_actions[last,t] = 0
 	}
 }
