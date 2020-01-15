@@ -200,19 +200,27 @@ run sequence {
 	goal[last]
 	-- backwards planning (quantified over: time > object > state)
 	all ss:Time-first | let s=ss.prev | {
-		-- if time not at initial state, some object, some state affected in the previous state
-		!initial[ss] implies {
-			{some t:Taxi | {
-				(all i:ss.taxix[t] | taxix_movee[s,t,i] or taxix_movew[s,t,i]) or
-				(all i:ss.taxiy[t] | taxiy_moven[s,t,i] or taxiy_moves[s,t,i])
-			}} or
-			{some p:Pass | {
-				(all i:ss.passx[p] | passx_movee[s,p,i] or passx_movew[s,p,i]) or
-				(all i:ss.passy[p] | passy_moven[s,p,i] or passy_moves[s,p,i])
-			}} or
-			{some t:Taxi,p:Pass | {
-				(all b:ss.pint[p,t] | pint_pickup[s,p,t,b] or pint_dropoff[s,p,t,b])
-			}}
+		-- for all time, all objects, state must be affected until reaching the initial state
+		all t:Taxi | {
+			all i:ss.taxix[t] | {
+				!initial_taxix[t,i] implies (taxix_movee[s,t,i] or taxix_movew[s,t,i] or taxix_else[s,t,i])
+			}
+			all i:ss.taxiy[t] | {
+				!initial_taxiy[t,i] implies (taxiy_moven[s,t,i] or taxiy_moves[s,t,i] or taxiy_else[s,t,i])
+			}
+		}
+		all p:Pass | {
+			all i:ss.passx[p] | {
+				!initial_passx[p,i] implies (passx_movee[s,p,i] or passx_movew[s,p,i] or passx_else[s,p,i])
+			}
+			all i:ss.passy[p] | {
+				!initial_passy[p,i] implies (passy_moven[s,p,i] or passy_moves[s,p,i] or passy_else[s,p,i])
+			}
+		}
+		all t:Taxi, p:Pass | {
+			all b:ss.pint[p,t] | {
+				!initial_pint[p,t,b] implies (pint_pickup[s,p,t,b] or pint_dropoff[s,p,t,b] or pint_else[s,p,t,b])
+			}
 		}
 		-- the factorization of state effects into actions is respected
 		all t:Taxi,p:Pass | {
