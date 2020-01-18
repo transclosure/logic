@@ -205,7 +205,7 @@ pred initial_pint[p:Pass,t:Taxi,b:Bool] {
 		*
 	*
 */
-run sequence {
+run space {
 	initial[first]
 	-- for all time, all objects, take action (positive effects / negative framing) until all factors reach initial state
 	all s:Time | let ss=s.next | {

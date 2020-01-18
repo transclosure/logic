@@ -1,16 +1,7 @@
 /*
 	*
 		*
-			TODO
-		*
-	*
-*/
--- walls and taxi capacity (no reason why they can't be added, just simplified model)
--- anything else missing from RDDL taxi example?
-/*
-	*
-		*
-			Scope Abstracted MDP (action and object factorization)
+			Object/Action Factored MDP
 		*
 	*
 */
@@ -28,85 +19,92 @@ one sig Time {
 	passy: Pass -> set Int,
 	pint: Pass -> Taxi -> set Bool,
 	-- action fluents
-	moven: Taxi -> lone True,
-	moves: Taxi -> lone True,
-	movee: Taxi -> lone True,
-	movew: Taxi -> lone True,
-	pickup: Taxi -> Pass -> lone True,
-	dropoff: Taxi -> Pass -> lone True
+	moven: Taxi -> set Bool,
+	moves: Taxi -> set Bool,
+	movee: Taxi -> set Bool,
+	movew: Taxi -> set Bool,
+	pickup: Taxi -> Pass -> set Bool,
+	dropoff: Taxi -> Pass -> set Bool
 }
-fun first : one Time {Time}
-fun prev[t:Time] : one Time {Time}
-fun next[t:Time] : one Time {Time}
-fun last : one Time {Time}
+fun first: one Time {Time}
+fun prev[t:Time]: one Time {Time}
+fun next[t:Time]: one Time {Time}
+fun last: one Time {Time}
 -- RDDL: cdf { taxix } 
-pred taxix_movee[s:Time,t:Taxi,i:Int] {
-	-- no east wall
+pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
 	True in s.movee[t]
-	Int in s.taxix[t]
+	Int in ss.taxix[t]
 }
-pred taxix_movew[s:Time,t:Taxi,i:Int] {
-	-- no west wall
+pred taxix_movew[s:Time,ss:Time,t:Taxi,tx:Int] {
 	True in s.movew[t]
-	Int in s.taxix[t]
+	Int in ss.taxix[t]
+}
+pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
+	tx in ss.taxix[t]
 }
 -- RDDL: cdf { taxiy } 
-pred taxiy_moven[s:Time,t:Taxi,i:Int] {
-	-- no north wall
+pred taxiy_moven[s:Time,ss:Time,t:Taxi,ty:Int] {
 	True in s.moven[t]
-	Int in s.taxiy[t]
+	Int in ss.taxiy[t]
 }
-pred taxiy_moves[s:Time,t:Taxi,i:Int] {
-	-- no south wall
+pred taxiy_moves[s:Time,ss:Time,t:Taxi,ty:Int] {
 	True in s.moves[t]
-	Int in s.taxiy[t]
+	Int in ss.taxiy[t]
+}
+pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
+	ty in ss.taxiy[t]
 }
 -- RDDL: cdf { passx } 
-pred passx_movee[s:Time,p:Pass,i:Int] {
-	-- no east wall
+pred passx_movee[s:Time,ss:Time,p:Pass,px:Int] {
 	some t:Taxi | {
-		Bool in s.pint[p,t]
+		True in s.pint[p,t]
 		True in s.movee[t]
 	}
-	Int in s.passx[p]
+	Int in ss.passx[p]
 }
-pred passx_movew[s:Time,p:Pass,i:Int] {
-	-- no west wall
+pred passx_movew[s:Time,ss:Time,p:Pass,px:Int] {
 	some t:Taxi | {
-		Bool in s.pint[p,t]
+		True in s.pint[p,t]
 		True in s.movew[t]
 	}
-	Int in s.passx[p]
+	Int in ss.passx[p]
+}
+pred passx_else[s:Time,ss:Time,p:Pass,px:Int] {
+	px in ss.passx[p]
 }
 -- RDDL: cdf { passy } 
-pred passy_moven[s:Time,p:Pass,i:Int] {
-	-- no north wall
+pred passy_moven[s:Time,ss:Time,p:Pass,py:Int] {
 	some t:Taxi | {
-		Bool in s.pint[p,t]
+		True in s.pint[p,t]
 		True in s.moven[t]
 	}
-	Int in s.passy[p]
+	Int in ss.passy[p]
 }
-pred passy_moves[s:Time,p:Pass,i:Int] {
-	-- no south wall
+pred passy_moves[s:Time,ss:Time,p:Pass,py:Int] {
 	some t:Taxi | {
-		Bool in s.pint[p,t]
+		True in s.pint[p,t]
 		True in s.moves[t]
 	}
-	Int in s.passy[p]
+	Int in ss.passy[p]
+}
+pred passy_else[s:Time,ss:Time,p:Pass,py:Int] {
+	py in ss.passy[p]
 }
 -- RDDL: cdf { pint }
-pred pint_pickup[s:Time,p:Pass,t:Taxi,b:Bool] {
+pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	some (s.taxix[t]&s.passx[p])
 	some (s.taxiy[t]&s.passy[p])
-	Bool in s.pint[p,t]
+	False in s.pint[p,t]
 	True in s.pickup[t,p]
-	b=True
+	Bool in ss.pint[p,t]
 }
-pred pint_dropoff[s:Time,p:Pass,t:Taxi,b:Bool] {
-	Bool in s.pint[p,t]
+pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
+	True in s.pint[p,t]
 	True in s.dropoff[t,p]
-	b=False
+	Bool in ss.pint[p,t]
+}
+pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
+	pnt in ss.pint[p,t]
 }
 /*
 	*
@@ -116,180 +114,89 @@ pred pint_dropoff[s:Time,p:Pass,t:Taxi,b:Bool] {
 	*
 */
 one sig T extends Taxi {}
-one sig P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,
-		P10,P11,P12,P13,P14,P15,P16,P17,P18,P19,
-		P20,P21,P22,P23,P24,P25,P26,P27,P28,P29,
-		P30,P31,P32,P33,P34,P35,P36,P37,P38,P39,
-		P40,P41,P42,P43,P44,P45,P46,P47,P48,P49
-extends Pass {}
+one sig P0,P1,P2,P3,P4,P5,P6,P7,P8,P9 extends Pass {}
+pred initial[s:Time] {
+	all t:Taxi | {
+		initial_taxix[t,s.taxix[t]]
+		initial_taxiy[t,s.taxiy[t]]
+	}
+	all p:Pass | {
+		initial_passx[p,s.passx[p]]
+		initial_passy[p,s.passy[p]]
+	}
+	all p:Pass,t:Taxi | {
+		initial_pint[p,t,s.pint[p,t]]
+	}
+}
 pred goal[s:Time] {
-	1 in s.taxix[T]
-	0 in s.taxiy[T]
-	1 in s.passx[P7]
-	0 in s.passy[P7]
-	False in s.pint[P7,T]
+	all t:Taxi | {
+		goal_taxix[t,s.taxix[t]]
+		goal_taxiy[t,s.taxiy[t]]
+	}
+	all p:Pass | {
+		goal_passx[p,s.passx[p]]
+		goal_passy[p,s.passy[p]]
+	}
+	all p:Pass,t:Taxi | {
+		goal_pint[p,t,s.pint[p,t]]
+	}
+}
+pred goal_taxix[t:Taxi,i:Int] {
+	T in t implies 1 in i
+}
+pred goal_taxiy[t:Taxi,i:Int] {
+	T in t implies 0 in i
+}
+pred goal_passx[p:Pass,i:Int] {
+	P7 in p implies 1 in i
+}
+pred goal_passy[p:Pass,i:Int] {
+	P7 in p implies 0 in i
+}
+pred goal_pint[p:Pass,t:Taxi,b:Bool] {
+	(P7 in p and T in t) implies False in b
 }
 pred initial_taxix[t:Taxi,i:Int] {
-	t=T implies i=0
+	T in t implies 0 in i
 }
 pred initial_taxiy[t:Taxi,i:Int] {
-	t=T implies i=0
+	T in t implies 0 in i
 }
 pred initial_passx[p:Pass,i:Int] {
-	p=P0 implies i=0
-	p=P1 implies i=0
-	p=P2 implies i=0
-	p=P3 implies i=0
-	p=P4 implies i=0
-	p=P5 implies i=0
-	p=P6 implies i=0
-	p=P7 implies i=0
-	p=P8 implies i=0
-	p=P9 implies i=0
-	p=P10 implies i=0
-	p=P11 implies i=0
-	p=P12 implies i=0
-	p=P13 implies i=0
-	p=P14 implies i=0
-	p=P15 implies i=0
-	p=P16 implies i=0
-	p=P17 implies i=0
-	p=P18 implies i=0
-	p=P19 implies i=0
-	p=P20 implies i=0
-	p=P21 implies i=0
-	p=P22 implies i=0
-	p=P23 implies i=0
-	p=P24 implies i=0
-	p=P25 implies i=0
-	p=P26 implies i=0
-	p=P27 implies i=0
-	p=P28 implies i=0
-	p=P29 implies i=0
-	p=P30 implies i=0
-	p=P31 implies i=0
-	p=P32 implies i=0
-	p=P33 implies i=0
-	p=P34 implies i=0
-	p=P35 implies i=0
-	p=P36 implies i=0
-	p=P37 implies i=0
-	p=P38 implies i=0
-	p=P39 implies i=0
-	p=P40 implies i=0
-	p=P41 implies i=0
-	p=P42 implies i=0
-	p=P43 implies i=0
-	p=P44 implies i=0
-	p=P45 implies i=0
-	p=P46 implies i=0
-	p=P47 implies i=0
-	p=P48 implies i=0
-	p=P49 implies i=0
+	P0 in p implies 0 in i
+	P1 in p implies 0 in i
+	P2 in p implies 0 in i
+	P3 in p implies 0 in i
+	P4 in p implies 0 in i
+	P5 in p implies 0 in i
+	P6 in p implies 0 in i
+	P7 in p implies 0 in i
+	P8 in p implies 0 in i
+	P9 in p implies 0 in i
 }
 pred initial_passy[p:Pass,i:Int] {
-	p=P0 implies i=0
-	p=P1 implies i=0
-	p=P2 implies i=0
-	p=P3 implies i=0
-	p=P4 implies i=0
-	p=P5 implies i=0
-	p=P6 implies i=0
-	p=P7 implies i=0
-	p=P8 implies i=0
-	p=P9 implies i=0
-	p=P10 implies i=0
-	p=P11 implies i=0
-	p=P12 implies i=0
-	p=P13 implies i=0
-	p=P14 implies i=0
-	p=P15 implies i=0
-	p=P16 implies i=0
-	p=P17 implies i=0
-	p=P18 implies i=0
-	p=P19 implies i=0
-	p=P20 implies i=0
-	p=P21 implies i=0
-	p=P22 implies i=0
-	p=P23 implies i=0
-	p=P24 implies i=0
-	p=P25 implies i=0
-	p=P26 implies i=0
-	p=P27 implies i=0
-	p=P28 implies i=0
-	p=P29 implies i=0
-	p=P30 implies i=0
-	p=P31 implies i=0
-	p=P32 implies i=0
-	p=P33 implies i=0
-	p=P34 implies i=0
-	p=P35 implies i=0
-	p=P36 implies i=0
-	p=P37 implies i=0
-	p=P38 implies i=0
-	p=P39 implies i=0
-	p=P40 implies i=0
-	p=P41 implies i=0
-	p=P42 implies i=0
-	p=P43 implies i=0
-	p=P44 implies i=0
-	p=P45 implies i=0
-	p=P46 implies i=0
-	p=P47 implies i=0
-	p=P48 implies i=0
-	p=P49 implies i=0
+	P0 in p implies 0 in i
+	P1 in p implies 0 in i
+	P2 in p implies 0 in i
+	P3 in p implies 0 in i
+	P4 in p implies 0 in i
+	P5 in p implies 0 in i
+	P6 in p implies 0 in i
+	P7 in p implies 0 in i
+	P8 in p implies 0 in i
+	P9 in p implies 0 in i
 }
 pred initial_pint[p:Pass,t:Taxi,b:Bool] {
-	(p=P0 and t=T) implies b=False
-	(p=P1 and t=T) implies b=False
-	(p=P2 and t=T) implies b=False
-	(p=P3 and t=T) implies b=False
-	(p=P4 and t=T) implies b=False
-	(p=P5 and t=T) implies b=False
-	(p=P6 and t=T) implies b=False
-	(p=P7 and t=T) implies b=False
-	(p=P8 and t=T) implies b=False
-	(p=P9 and t=T) implies b=False
-	(p=P10 and t=T) implies b=False
-	(p=P11 and t=T) implies b=False
-	(p=P12 and t=T) implies b=False
-	(p=P13 and t=T) implies b=False
-	(p=P14 and t=T) implies b=False
-	(p=P15 and t=T) implies b=False
-	(p=P16 and t=T) implies b=False
-	(p=P17 and t=T) implies b=False
-	(p=P18 and t=T) implies b=False
-	(p=P19 and t=T) implies b=False
-	(p=P20 and t=T) implies b=False
-	(p=P21 and t=T) implies b=False
-	(p=P22 and t=T) implies b=False
-	(p=P23 and t=T) implies b=False
-	(p=P24 and t=T) implies b=False
-	(p=P25 and t=T) implies b=False
-	(p=P26 and t=T) implies b=False
-	(p=P27 and t=T) implies b=False
-	(p=P28 and t=T) implies b=False
-	(p=P29 and t=T) implies b=False
-	(p=P30 and t=T) implies b=False
-	(p=P31 and t=T) implies b=False
-	(p=P32 and t=T) implies b=False
-	(p=P33 and t=T) implies b=False
-	(p=P34 and t=T) implies b=False
-	(p=P35 and t=T) implies b=False
-	(p=P36 and t=T) implies b=False
-	(p=P37 and t=T) implies b=False
-	(p=P38 and t=T) implies b=False
-	(p=P39 and t=T) implies b=False
-	(p=P40 and t=T) implies b=False
-	(p=P41 and t=T) implies b=False
-	(p=P42 and t=T) implies b=False
-	(p=P43 and t=T) implies b=False
-	(p=P44 and t=T) implies b=False
-	(p=P45 and t=T) implies b=False
-	(p=P46 and t=T) implies b=False
-	(p=P47 and t=T) implies b=False
-	(p=P48 and t=T) implies b=False
-	(p=P49 and t=T) implies b=False
+	(P0 in p and T in t) implies False in b
+	(P1 in p and T in t) implies False in b
+	(P2 in p and T in t) implies False in b
+	(P3 in p and T in t) implies False in b
+	(P4 in p and T in t) implies False in b
+	(P5 in p and T in t) implies False in b
+	(P6 in p and T in t) implies False in b
+	(P7 in p and T in t) implies False in b
+	(P8 in p and T in t) implies False in b
+	(P9 in p and T in t) implies False in b
 }
 /*
 	*
@@ -299,29 +206,161 @@ pred initial_pint[p:Pass,t:Taxi,b:Bool] {
 	*
 */
 run scope {
-	goal[last]
-	-- backwards planning (quantified over time, object, state... implies action effects)
-	all ss:Time | let s=ss.prev | {
+	initial[first]
+	-- for all time, all objects, take action (positive effects / negative framing) until all factors reach initial state
+	all s:Time | let ss=s.next | {
+		-- Action Effects (what's possible)
 		all t:Taxi | {
-			all i:ss.taxix[t] | {
-				!initial_taxix[t,i] implies (taxix_movee[s,t,i] or taxix_movew[s,t,i])
+			all tx:s.taxix[t] | {
+				!goal_taxix[t,tx] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] )--or taxix_else[s,ss,t,tx])
 			}
-			all i:ss.taxiy[t] | {
-				!initial_taxiy[t,i] implies (taxiy_moven[s,t,i] or taxiy_moves[s,t,i])
+			all ty:s.taxiy[t] | {
+				!goal_taxiy[t,ty] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] )--or taxiy_else[s,ss,t,ty])
 			}
 		}
 		all p:Pass | {
-			all i:ss.passx[p] | {
-				!initial_passx[p,i] implies (passx_movee[s,p,i] or passx_movew[s,p,i])
+			all px:s.passx[p] | {
+				!goal_passx[p,px] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] )--or passx_else[s,ss,p,px])
 			}
-			all i:ss.passy[p] | {
-				!initial_passy[p,i] implies (passy_moven[s,p,i] or passy_moves[s,p,i])
+			all py:s.passy[p] | {
+				!goal_passy[p,py] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] )--or passy_else[s,ss,p,py])
 			}
 		}
-		all t:Taxi, p:Pass | {
-			all b:ss.pint[p,t] | {
-				!initial_pint[p,t,b] implies (pint_pickup[s,p,t,b] or pint_dropoff[s,p,t,b])
+		all t:Taxi,p:Pass | {
+			all pnt:s.pint[p,t] | {
+				!goal_pint[p,t,pnt] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] )--or pint_else[s,ss,p,t,pnt])
 			}
-		}	
+		}
+		-- Action Frames (what's impossible given what possibility occured)
+		all t:Taxi | {
+			all tx:s.taxix[t] | {
+				taxix_movee[s,ss,t,tx] implies {
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all p:Pass | {
+						all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxix_movew[s,ss,t,tx] implies {
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all p:Pass | {
+						all px:s.passx[p] | passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxix_else[s,ss,t,tx] implies {
+					all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+					all p:Pass | {
+						all px:s.passx[p] | passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+			all ty:s.taxiy[t] | {
+				taxiy_moven[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxiy_moves[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxiy_else[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+		}
+		all p:Pass | {
+			all px:s.passx[p] | {
+				passx_movee[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passx_movew[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passx_else[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+			all py:s.passy[p] | {
+				passy_moven[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passy_moves[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passy_else[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+		}
+		all t:Taxi,p:Pass | {
+			all pnt:s.pint[p,t] | {
+				pint_pickup[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+				}
+				pint_dropoff[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+				}
+				pint_else[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+				}
+			}
+		}
 	}
 } for 5 Int
