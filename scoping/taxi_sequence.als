@@ -98,7 +98,7 @@ pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	some (s.taxiy[t]&s.passy[p])
 	False in s.pint[p,t]
 	True in s.pickup[t,p]
-	pnt in ss.pint[p,t]
+	True in ss.pint[p,t]
 }
 pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	True in s.pint[p,t]
@@ -246,7 +246,6 @@ run sequence {
 			}
 		}
 		-- Action Frames (what's impossible given what possibility occured)
-		/*
 		all t:Taxi | {
 			all tx:s.taxix[t] | {
 				taxix_movee[s,ss,t,tx] implies {
@@ -274,13 +273,33 @@ run sequence {
 					}
 				}
 			}
-			--all ty:s.taxiy[t] | {
-			--	taxiy_moven[s,ss,t,ty]
-			--	taxiy_moves[s,ss,t,ty]
-			--	taxiy_else[s,ss,t,ty]
-			--}
+			all ty:s.taxiy[t] | {
+				taxiy_moven[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxiy_moves[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				taxiy_else[s,ss,t,ty] implies {
+					all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+					all p:Pass | {
+						all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+						all py:s.passy[p] | passy_else[s,ss,p,py]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
 		}
-		*/
 		--all p:Pass | {
 			--all px:s.passx[p] | {
 			--	passx_movee[s,ss,p,px]
