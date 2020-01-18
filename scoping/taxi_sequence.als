@@ -207,7 +207,6 @@ pred initial_pint[p:Pass,t:Taxi,b:Bool] {
 		*
 	*
 */
--- TODOOOOO
 fun num_actions[s:one Time,t:Taxi] : one Int {
 	plus[(sum p:Pass | plus[#(s.pickup[t,p]&True),#(s.dropoff[t,p]&True)]),
 		plus[#(s.movew[t]&True),
@@ -300,24 +299,81 @@ run sequence {
 				}
 			}
 		}
-		--all p:Pass | {
-			--all px:s.passx[p] | {
-			--	passx_movee[s,ss,p,px]
-			--	passx_movew[s,ss,p,px]
-			--	passx_else[s,ss,p,px]
-			--}
-			--all py:s.passy[p] | {
-			--	passy_moven[s,ss,p,py]
-			--	passy_moves[s,ss,p,py]
-			--	passy_else[s,ss,p,py]
-			--}
-		--}
-		--all t:Taxi,p:Pass | {
-			--all pnt:s.pint[p,t] | {
-			--	pint_pickup[s,ss,p,t,pnt]
-			--	pint_dropoff[s,ss,p,t,pnt]
-			--	pint_else[s,ss,p,t,pnt]
-			--}
-		--}
+		all p:Pass | {
+			all px:s.passx[p] | {
+				passx_movee[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passx_movew[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passx_else[s,ss,p,px] implies {
+					all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+			all py:s.passy[p] | {
+				passy_moven[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passy_moves[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_else[s,ss,p,t,pnt]
+					}
+				}
+				passy_else[s,ss,p,py] implies {
+					all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+					all t:Taxi | {
+						all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+						all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+						all pnt:s.pint[p,t] | pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt]
+					}
+				}
+			}
+		}
+		all t:Taxi,p:Pass | {
+			all pnt:s.pint[p,t] | {
+				pint_pickup[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+				}
+				pint_dropoff[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_else[s,ss,p,py]
+				}
+				pint_else[s,ss,p,t,pnt] implies {
+					all tx:s.taxix[t] | taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx]
+					all ty:s.taxiy[t] | taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty]
+					all px:s.passx[p] | passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px]
+					all py:s.passy[p] | passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py]
+				}
+			}
+		}
 	}
 } for 4 Time, 5 Int
