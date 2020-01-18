@@ -27,11 +27,6 @@ sig Time {
 	pickup: Taxi -> Pass -> one Bool,
 	dropoff: Taxi -> Pass -> one Bool
 }
-/* RDDL cdf (Transition Dynamics) Formulation:
-	conditions over prestate AND
-	actions from prestate to poststate AND (implies???)
-	effects over prestate variable value into poststate
-*/
 -- RDDL: cdf { taxix } 
 pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
 	True in s.movee[t]
