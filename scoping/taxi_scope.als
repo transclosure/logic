@@ -17,23 +17,15 @@ abstract sig Time {
 	taxiy: Taxi -> set Int,
 	passx: Pass -> set Int,
 	passy: Pass -> set Int,
-	pint: Pass -> Taxi -> set Bool,
-	-- action fluents
-	moven: Taxi -> set Bool,
-	moves: Taxi -> set Bool,
-	movee: Taxi -> set Bool,
-	movew: Taxi -> set Bool,
-	pickup: Taxi -> Pass -> set Bool,
-	dropoff: Taxi -> Pass -> set Bool
+	pint: Pass -> Taxi -> set Bool
 }
 one sig Initial,Goal extends Time {}
 -- RDDL: cdf { taxix } 
 pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
-	True in s.movee[t]
 	Int in ss.taxix[t]
 }
 pred taxix_movew[s:Time,ss:Time,t:Taxi,tx:Int] {
-	True in s.movew[t]
+	--True in s.movew[t]
 	Int in ss.taxix[t]
 }
 pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
@@ -41,11 +33,9 @@ pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
 }
 -- RDDL: cdf { taxiy } 
 pred taxiy_moven[s:Time,ss:Time,t:Taxi,ty:Int] {
-	True in s.moven[t]
 	Int in ss.taxiy[t]
 }
 pred taxiy_moves[s:Time,ss:Time,t:Taxi,ty:Int] {
-	True in s.moves[t]
 	Int in ss.taxiy[t]
 }
 pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
@@ -55,14 +45,12 @@ pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
 pred passx_movee[s:Time,ss:Time,p:Pass,px:Int] {
 	some t:Taxi | {
 		True in s.pint[p,t]
-		True in s.movee[t]
 	}
 	Int in ss.passx[p]
 }
 pred passx_movew[s:Time,ss:Time,p:Pass,px:Int] {
 	some t:Taxi | {
 		True in s.pint[p,t]
-		True in s.movew[t]
 	}
 	Int in ss.passx[p]
 }
@@ -73,14 +61,12 @@ pred passx_else[s:Time,ss:Time,p:Pass,px:Int] {
 pred passy_moven[s:Time,ss:Time,p:Pass,py:Int] {
 	some t:Taxi | {
 		True in s.pint[p,t]
-		True in s.moven[t]
 	}
 	Int in ss.passy[p]
 }
 pred passy_moves[s:Time,ss:Time,p:Pass,py:Int] {
 	some t:Taxi | {
 		True in s.pint[p,t]
-		True in s.moves[t]
 	}
 	Int in ss.passy[p]
 }
@@ -93,13 +79,11 @@ pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	some (s.taxiy[t]&s.passy[p])
 	False in s.pint[p,t]
 	False in pnt
-	True in s.pickup[t,p]
 	Bool in ss.pint[p,t]
 }
 pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	True in s.pint[p,t]
 	True in pnt
-	True in s.dropoff[t,p]
 	Bool in ss.pint[p,t]
 }
 pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
@@ -156,6 +140,14 @@ pred in_pint[s:Time,p:Pass,t:Taxi,b:Bool] {
 		*
 	*
 */
+fun relevant : univ {
+	{t:Taxi | #Initial.taxix[t]!=1}+
+	{t:Taxi | #Initial.taxiy[t]!=1}+
+	{p:Pass | #Initial.passx[p]!=1}+
+	{p:Pass | #Initial.passy[p]!=1}+
+	{p:Pass | some t:Taxi | #Initial.pint[p,t]!=1}+
+	{t:Taxi | some p:Pass | #Initial.pint[p,t]!=1}
+}
 run scope {
 	initial[Initial]
 	goal[Goal]
@@ -180,4 +172,4 @@ run scope {
 			!in_pint[Goal,p,t,pnt] implies (pint_pickup[Goal,Initial,p,t,pnt] or pint_dropoff[Goal,Initial,p,t,pnt])
 		}
 	}
-} for 1 Int
+} for 4 Int

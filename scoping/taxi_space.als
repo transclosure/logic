@@ -156,6 +156,14 @@ pred in_pint[s:Time,p:Pass,t:Taxi,b:Bool] {
 		*
 	*
 */
+fun relevant : univ {
+	{t:Taxi | #Initial.taxix[t]!=1}+
+	{t:Taxi | #Initial.taxiy[t]!=1}+
+	{p:Pass | #Initial.passx[p]!=1}+
+	{p:Pass | #Initial.passy[p]!=1}+
+	{p:Pass | some t:Taxi | #Initial.pint[p,t]!=1}+
+	{t:Taxi | some p:Pass | #Initial.pint[p,t]!=1}
+}
 run space {
 	initial[Initial]
 	goal[Goal]
