@@ -92,11 +92,13 @@ pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	some (s.taxix[t]&s.passx[p])
 	some (s.taxiy[t]&s.passy[p])
 	False in s.pint[p,t]
+	False in pnt
 	True in s.pickup[t,p]
 	True in ss.pint[p,t]
 }
 pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	True in s.pint[p,t]
+	True in pnt
 	True in s.dropoff[t,p]
 	False in ss.pint[p,t]
 }
@@ -112,18 +114,6 @@ pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 */
 one sig T extends Taxi {}
 one sig P0,P1,P2,P3,P4,P5,P6,P7,P8,P9 extends Pass {}
-pred goal[s:Time] {
-	1 in s.taxix[T]
-	0 in s.taxiy[T]
-	1 in s.passx[P7]
-	0 in s.passy[P7]
-	False in s.pint[P7][T]
-}
-pred in_taxix[s:Time,ss:Time,t:Taxi] { s.taxix[t] in ss.taxix[t] }
-pred in_taxiy[s:Time,ss:Time,t:Taxi] { s.taxiy[t] in ss.taxiy[t] }
-pred in_passx[s:Time,ss:Time,p:Pass] { s.passx[p] in ss.passx[p] }
-pred in_passy[s:Time,ss:Time,p:Pass] { s.passy[p] in ss.passy[p] }
-pred in_pint[s:Time,ss:Time,p:Pass,t:Taxi] { s.pint[p][t] in ss.pint[p][t] }
 pred initial[s:Time] {
 	0 in s.taxix[T] and 0 in s.taxiy[T]
 	0 in s.passx[P0] and 0 in s.passy[P0]
@@ -147,6 +137,28 @@ pred initial[s:Time] {
 	False in s.pint[P8][T]
 	False in s.pint[P9][T]
 }
+pred goal[s:Time] {
+	1 in s.taxix[T]
+	0 in s.taxiy[T]
+	1 in s.passx[P7]
+	0 in s.passy[P7]
+	False in s.pint[P7][T]
+}
+pred in_taxix[s:Time,t:Taxi,i:Int] {
+	s.taxix[t] in i
+}
+pred in_taxiy[s:Time,t:Taxi,i:Int] {
+	s.taxiy[t] in i
+}
+pred in_passx[s:Time,p:Pass,i:Int] {
+	s.passx[p] in i
+}
+pred in_passy[s:Time,p:Pass,i:Int] {
+	s.passy[p] in i
+}
+pred in_pint[s:Time,p:Pass,t:Taxi,b:Bool] {
+	s.pint[p][t] in b
+}
 /*
 	*
 		*
@@ -162,35 +174,32 @@ fun num_actions[s:one Time,t:Taxi] : one Int {
 						#(s.moven[t]&True)]]]]
 }
 run sequence {
-	-- valid planning sequence
 	initial[first]
 	all t:Taxi | (all s:Time-last | num_actions[s,t] = 1) and num_actions[last,t] = 0
 	goal[last]
-	-- for all time, all objects, take action (positive effects / negative framing) until all factors reach initial state
 	all s:Time-last | let ss=s.next | {
-		-- Action Effects (what's possible)
 		all t:Taxi | {
 			all tx:s.taxix[t] | {
-				!in_taxix[last,s,t] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx])
+				!in_taxix[last,t,tx] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx])
 			}
 			all ty:s.taxiy[t] | {
-				!in_taxiy[last,s,t] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty])
+				!in_taxiy[last,t,ty] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty])
 			}
 		}
 		all p:Pass | {
 			all px:s.passx[p] | {
-				!in_passx[last,s,p] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px])
+				!in_passx[last,p,px] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px])
 			}
 			all py:s.passy[p] | {
-				!in_passy[last,s,p] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py])
+				!in_passy[last,p,py] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py])
 			}
 		}
 		all t:Taxi,p:Pass | {
 			all pnt:s.pint[p,t] | {
-				!in_pint[last,s,p,t] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt])
+				!in_pint[last,p,t,pnt] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt])
 			}
 		}
-		-- Action Frames (what's impossible given what possibility occured)
+		-- ACTION EFFECT FRAMING
 		all t:Taxi | {
 			all tx:s.taxix[t] | {
 				taxix_movee[s,ss,t,tx] implies {
