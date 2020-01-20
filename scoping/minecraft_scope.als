@@ -34,113 +34,136 @@ abstract sig Time {
 	agentnumdaisyflowers: Agent -> Int,
 	agentnumrawrabbits: Agent -> Int,
 	agentnumcookedrabbits: Agent -> Int,
-	glassblockx: GlassBlock -> Int,
-	glassblocky: GlassBlock -> Int,
-	glassblockz: GlassBlock -> Int,
 	glassblockhits: GlassBlock -> Int,
 	glassblockpresent: GlassBlock -> Bool,
-	dirtblockx: DirtBlock -> Int,
-	dirtblocky: DirtBlock -> Int,
-	dirtblockz: DirtBlock -> Int,
 	dirtblockhits: DirtBlock -> Int,
 	dirtblockpresent: DirtBlock -> Bool,
+	applepresent: Apple -> Bool,
+	daisyflowerpresent: DaisyFlower -> Bool,
+	rawrabbitpresent: RawRabbit -> Bool,
+	orchidpresent: OrchidFlower -> Bool,
+	potatopresent: Potato -> Bool,
+	-- non-fluents
 	applex: Apple -> Int,
 	appley: Apple -> Int,
 	applez: Apple -> Int,
-	applepresent: Apple -> Bool,
 	daisyflowerx: DaisyFlower -> Int,
 	daisyflowery: DaisyFlower -> Int,
 	daisyflowerz: DaisyFlower -> Int,
-	daisyflowerpresent: DaisyFlower -> Bool,
 	rawrabbitx: RawRabbit -> Int,
 	rawrabbity: RawRabbit -> Int,
 	rawrabbitz: RawRabbit -> Int,
-	rawrabbitpresent: RawRabbit -> Bool,
 	orchidx: OrchidFlower -> Int,
 	orchidy: OrchidFlower -> Int,
 	orchidz: OrchidFlower -> Int,
-	orchidpresent: OrchidFlower -> Bool,
 	potatox: Potato -> Int,
 	potatoy: Potato -> Int,
 	potatoz: Potato -> Int,
-	potatopresent: Potato -> Bool,
-	-- non-fluents
+	glassblockx: GlassBlock -> Int,
+	glassblocky: GlassBlock -> Int,
+	glassblockz: GlassBlock -> Int,
+	dirtblockx: DirtBlock -> Int,
+	dirtblocky: DirtBlock -> Int,
+	dirtblockz: DirtBlock -> Int,
 	lavax: Lava -> Int,
 	lavay: Lava -> Int,
 	lavaz: Lava -> Int
 }
 one sig Initial,Goal extends Time {}
-/*
--- RDDL: cdf { taxix } 
-pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
-	Int in ss.taxix[t]
+-- RDDL: cdf { agentx }
+pred agentx_movee[s:Time,ss:Time,a:Agent,ax:Int] {
+	Bool in s.agentalive[a]
+	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
+	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	Int in ss.agentx[a]
 }
-pred taxix_movew[s:Time,ss:Time,t:Taxi,tx:Int] {
-	--True in s.movew[t]
-	Int in ss.taxix[t]
+pred agentx_movew[s:Time,ss:Time,a:Agent,ax:Int] {
+	Bool in s.agentalive[a]
+	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
+	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	Int in ss.agentx[a]
 }
-pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
-	tx in ss.taxix[t]
+-- RDDL: cdf { agenty }
+pred agenty_moven[s:Time,ss:Time,a:Agent,ay:Int] {
+	Bool in s.agentalive[a]
+	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
+	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	Int in ss.agenty[a]
 }
--- RDDL: cdf { taxiy } 
-pred taxiy_moven[s:Time,ss:Time,t:Taxi,ty:Int] {
-	Int in ss.taxiy[t]
+pred agenty_moves[s:Time,ss:Time,a:Agent,ay:Int] {
+	Bool in s.agentalive[a]
+	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
+	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	Int in ss.agenty[a]
 }
-pred taxiy_moves[s:Time,ss:Time,t:Taxi,ty:Int] {
-	Int in ss.taxiy[t]
-}
-pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
-	ty in ss.taxiy[t]
-}
--- RDDL: cdf { passx } 
-pred passx_movee[s:Time,ss:Time,p:Pass,px:Int] {
-	some t:Taxi | {
-		True in s.pint[p,t]
+-- RDDL: cdf { agentalive }
+pred agentalive_lava[s:Time,ss:Time,a:Agent,aa:Bool] {
+	all l:Lava | (Int in s.lavax[l] and Int in s.agentx[a]) and (Int in s.lavay[l] and Int in s.agenty[a]) and (Int in s.lavaz[l] and Int in s.agentz[a])
+	Bool in ss.agentalive[a]
+}  
+-- RDDL: cdf {glassblockhits}
+pred glassblockhits_attack[s:Time,ss:Time,gb:GlassBlock,gbh:Int] {
+	all a:Agent | {
+		Bool in s.agentalive[a]
+		(Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	}
-	Int in ss.passx[p]
+	Int in ss.glassblockhits[gb]
 }
-pred passx_movew[s:Time,ss:Time,p:Pass,px:Int] {
-	some t:Taxi | {
-		True in s.pint[p,t]
+pred glassblockhits_else[s:Time,ss:Time,gb:GlassBlock,gbh:Int] {
+	gbh in ss.glassblockhits[gb]
+}
+-- RDDL: cdf {glassblockpresent}
+pred glassblockpresent_axe[s:Time,ss:Time,gb:GlassBlock,gbp:Bool] {
+	all a:Agent | Bool in s.agenthaspickaxe[a]
+	Int in s.glassblockhits[gb]
+	Bool in ss.glassblockpresent[gb]
+}
+pred glassblockpresent_hand[s:Time,ss:Time,gb:GlassBlock,gbp:Bool] {
+	Int in s.glassblockhits[gb]
+	Bool in ss.glassblockpresent[gb]
+}
+-- RDDL: cdf {dirtblockhits}
+pred dirtblockhits_attack[s:Time,ss:Time,db:DirtBlock,dbh:Int] {
+	all a:Agent | {
+		Bool in s.agentalive[a]
+		(Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
 	}
-	Int in ss.passx[p]
+	Int in ss.dirtblockhits[db]
 }
-pred passx_else[s:Time,ss:Time,p:Pass,px:Int] {
-	px in ss.passx[p]
+-- RDDL: cdf {dirtblockpresent}
+pred dirtblockpresent_axe[s:Time,ss:Time,db:DirtBlock,dbp:Bool] {
+	all a:Agent | Bool in s.agenthaspickaxe[a]
+	Int in s.dirtblockhits[db]
+	Bool in ss.dirtblockpresent[db]
 }
--- RDDL: cdf { passy } 
-pred passy_moven[s:Time,ss:Time,p:Pass,py:Int] {
-	some t:Taxi | {
-		True in s.pint[p,t]
-	}
-	Int in ss.passy[p]
+pred dirtblockpresent_hand[s:Time,ss:Time,db:DirtBlock,dbp:Bool] {
+	Int in s.dirtblockhits[db]
+	Bool in ss.dirtblockpresent[db]
 }
-pred passy_moves[s:Time,ss:Time,p:Pass,py:Int] {
-	some t:Taxi | {
-		True in s.pint[p,t]
-	}
-	Int in ss.passy[p]
-}
-pred passy_else[s:Time,ss:Time,p:Pass,py:Int] {
-	py in ss.passy[p]
-}
--- RDDL: cdf { pint }
-pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
-	some (s.taxix[t]&s.passx[p])
-	some (s.taxiy[t]&s.passy[p])
-	False in s.pint[p,t]
-	False in pnt
-	Bool in ss.pint[p,t]
-}
-pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
-	True in s.pint[p,t]
-	True in pnt
-	Bool in ss.pint[p,t]
-}
-pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
-	pnt in ss.pint[p,t]
-}
-*/
+-- TODO
+-- RDDL: cdf {agentnumapples}
+-- RDDL: cdf {applepresent}
+-- RDDL: cdf {applex}
+-- RDDL: cdf {appley}
+-- RDDL: cdf {applez}
+-- RDDL: cdf {agentnumpotatoes}
+-- RDDL: cdf {potatopresent}
+-- RDDL: cdf {potatox}
+-- RDDL: cdf {potatoy}
+-- RDDL: cdf {potatoz}
+-- RDDL: cdf {orchidpresent}
+-- RDDL: cdf {orchidx}
+-- RDDL: cdf {orchidy}
+-- RDDL: cdf {orchidz}
+-- RDDL: cdf {daisyflowerpresent}
+-- RDDL: cdf {daisyflowerx}
+-- RDDL: cdf {daisyflowery}
+-- RDDL: cdf {daisyflowerz}
+-- RDDL: cdf {rawrabbitpresent}
+-- RDDL: cdf {rawrabbitx}
+-- RDDL: cdf {rawrabbity}
+-- RDDL: cdf {rawrabbitz}
+-- RDDL: cdf {numcookedrabbits}
 /*
 	*
 		*
@@ -183,8 +206,7 @@ one sig
 	LA41,LA42,LA43
 extends Lava {}
 pred initial[s:Time] {
-	-- state-fluents
-	6 in s.agentx[Steve] and 2 in s.agenty[Steve] 0 in s.agentz[Steve]
+	6 in s.agentx[Steve] and 3 in s.agenty[Steve] 0 in s.agentz[Steve]
 	True in s.agentalive[Steve] and True in s.agenthaspickaxe[Steve]
 	0 in s.agentnumapples[Steve] and 0 in s.agentnumpotatoes[Steve]
 	1 in s.agentnumorchids[Steve] and 0 in s.agentnumdaisyflowers[Steve]
@@ -334,7 +356,6 @@ pred initial[s:Time] {
 	1 in s.orchidx[ORF27]	and 2 in s.orchidy[ORF27] 	and 0 in s.orchidz[ORF27]  	and True in s.orchidpresent[ORF27]
 	1 in s.orchidx[ORF28]	and 2 in s.orchidy[ORF28] 	and 0 in s.orchidz[ORF28]  	and True in s.orchidpresent[ORF28]
 	1 in s.orchidx[ORF29]	and 2 in s.orchidy[ORF29] 	and 0 in s.orchidz[ORF29]  	and True in s.orchidpresent[ORF29]
-	-- non-fluents
 	1 in s.lavax[LA1]  		and 10 in s.lavay[LA1]  	and 0 in s.lavaz[LA1] 
     2 in s.lavax[LA2]  		and 10 in s.lavay[LA2]  	and 0 in s.lavaz[LA2] 
     3 in s.lavax[LA3]  		and 10 in s.lavay[LA3]  	and 0 in s.lavaz[LA3] 
@@ -380,69 +401,8 @@ pred initial[s:Time] {
     11 in s.lavax[LA43]  	and 9 in s.lavay[LA43]  	and 0 in s.lavaz[LA43]
 }
 pred goal[s:Time] {
-	-- state-fluents
-	5 in s.agentx[Steve] and 9 in s.agenty[Steve] 0 in s.agentz[Steve]
-	-- non-fluents
-	1 in s.lavax[LA1]  		and 10 in s.lavay[LA1]  	and 0 in s.lavaz[LA1] 
-    2 in s.lavax[LA2]  		and 10 in s.lavay[LA2]  	and 0 in s.lavaz[LA2] 
-    3 in s.lavax[LA3]  		and 10 in s.lavay[LA3]  	and 0 in s.lavaz[LA3] 
-    4 in s.lavax[LA4]  		and 10 in s.lavay[LA4]  	and 0 in s.lavaz[LA4] 
-    5 in s.lavax[LA5]  		and 10 in s.lavay[LA5]  	and 0 in s.lavaz[LA5] 
-    6 in s.lavax[LA6]  		and 10 in s.lavay[LA6]  	and 0 in s.lavaz[LA6] 
-    7 in s.lavax[LA7]  		and 10 in s.lavay[LA7]  	and 0 in s.lavaz[LA7] 
-    8 in s.lavax[LA8]  		and 10 in s.lavay[LA8]  	and 0 in s.lavaz[LA8] 
-    9 in s.lavax[LA9]  		and 10 in s.lavay[LA9]  	and 0 in s.lavaz[LA9] 
-    10 in s.lavax[LA10]  	and 10 in s.lavay[LA10]  	and 0 in s.lavaz[LA10]
-    11 in s.lavax[LA11]  	and 10 in s.lavay[LA11]  	and 0 in s.lavaz[LA11] 
-    1 in s.lavax[LA12]  	and 11 in s.lavay[LA12]  	and 0 in s.lavaz[LA12] 
-    2 in s.lavax[LA13]  	and 11 in s.lavay[LA13]  	and 0 in s.lavaz[LA13] 
-    3 in s.lavax[LA14]  	and 11 in s.lavay[LA14]  	and 0 in s.lavaz[LA14] 
-    4 in s.lavax[LA15]  	and 11 in s.lavay[LA15]  	and 0 in s.lavaz[LA15] 
-    5 in s.lavax[LA16]  	and 11 in s.lavay[LA16]  	and 0 in s.lavaz[LA16] 
-    6 in s.lavax[LA17]  	and 11 in s.lavay[LA17]  	and 0 in s.lavaz[LA17] 
-    7 in s.lavax[LA18]  	and 11 in s.lavay[LA18]  	and 0 in s.lavaz[LA18] 
-    8 in s.lavax[LA19]  	and 11 in s.lavay[LA19]  	and 0 in s.lavaz[LA19] 
-    9 in s.lavax[LA20]  	and 11 in s.lavay[LA20]  	and 0 in s.lavaz[LA20] 
-    10 in s.lavax[LA21]  	and 11 in s.lavay[LA21]  	and 0 in s.lavaz[LA21] 
-    11 in s.lavax[LA22]  	and 11 in s.lavay[LA22]  	and 0 in s.lavaz[LA22] 
-    8 in s.lavax[LA24]  	and 5 in s.lavay[LA24]  	and 0 in s.lavaz[LA24] 
-    8 in s.lavax[LA25]  	and 6 in s.lavay[LA25]  	and 0 in s.lavaz[LA25] 
-    8 in s.lavax[LA26]  	and 7 in s.lavay[LA26]  	and 0 in s.lavaz[LA26] 
-    8 in s.lavax[LA27]  	and 8 in s.lavay[LA27]  	and 0 in s.lavaz[LA27] 
-    8 in s.lavax[LA28]  	and 9 in s.lavay[LA28]  	and 0 in s.lavaz[LA28] 
-    9 in s.lavax[LA29]  	and 5 in s.lavay[LA29]  	and 0 in s.lavaz[LA29] 
-    9 in s.lavax[LA30]  	and 6 in s.lavay[LA30]  	and 0 in s.lavaz[LA30] 
-    9 in s.lavax[LA31]  	and 7 in s.lavay[LA31]  	and 0 in s.lavaz[LA31] 
-    9 in s.lavax[LA32]  	and 8 in s.lavay[LA32]  	and 0 in s.lavaz[LA32] 
-    9 in s.lavax[LA33]  	and 9 in s.lavay[LA33]  	and 0 in s.lavaz[LA33] 
-    10 in s.lavax[LA34]  	and 5 in s.lavay[LA34]  	and 0 in s.lavaz[LA34] 
-    10 in s.lavax[LA35]  	and 6 in s.lavay[LA35]  	and 0 in s.lavaz[LA35] 
-    10 in s.lavax[LA36]  	and 7 in s.lavay[LA36]  	and 0 in s.lavaz[LA36] 
-    10 in s.lavax[LA37]  	and 8 in s.lavay[LA37]  	and 0 in s.lavaz[LA37] 
-    10 in s.lavax[LA38]  	and 9 in s.lavay[LA38]  	and 0 in s.lavaz[LA38] 
-    11 in s.lavax[LA39]  	and 5 in s.lavay[LA39]  	and 0 in s.lavaz[LA39] 
-    11 in s.lavax[LA40]  	and 6 in s.lavay[LA40]  	and 0 in s.lavaz[LA40] 
-    11 in s.lavax[LA41]  	and 7 in s.lavay[LA41]  	and 0 in s.lavaz[LA41] 
-    11 in s.lavax[LA42]  	and 8 in s.lavay[LA42]  	and 0 in s.lavaz[LA42] 
-    11 in s.lavax[LA43]  	and 9 in s.lavay[LA43]  	and 0 in s.lavaz[LA43]
+	6 in s.agentx[Steve] and 9 in s.agenty[Steve] 0 in s.agentz[Steve]
 }
-/*
-pred in_taxix[s:Time,t:Taxi,i:Int] {
-	s.taxix[t] in i
-}
-pred in_taxiy[s:Time,t:Taxi,i:Int] {
-	s.taxiy[t] in i
-}
-pred in_passx[s:Time,p:Pass,i:Int] {
-	s.passx[p] in i
-}
-pred in_passy[s:Time,p:Pass,i:Int] {
-	s.passy[p] in i
-}
-pred in_pint[s:Time,p:Pass,t:Taxi,b:Bool] {
-	s.pint[p][t] in b
-}
-*/
 /*
 	*
 		*
@@ -498,27 +458,31 @@ fun relevant : univ {
 run scope {
 	initial[Initial]
 	goal[Goal]
-	/*
-	all t:Taxi | {
-		all tx:Initial.taxix[t] | {
-			!in_taxix[Goal,t,tx] implies (taxix_movee[Goal,Initial,t,tx] or taxix_movew[Goal,Initial,t,tx])
+	all a:Agent | {
+		all ax:Initial.agentx[a] | {
+			!(Goal.agentx[a] in ax) implies (agentx_movee[Goal,Initial,a,ax] or agentx_movew[Goal,Initial,a,ax])
 		}
-		all ty:Initial.taxiy[t] | {
-			!in_taxiy[Goal,t,ty] implies (taxiy_moven[Goal,Initial,t,ty] or taxiy_moves[Goal,Initial,t,ty])
+		all ay:Initial.agenty[a] | {
+			!(Goal.agenty[a] in ay) implies (agenty_moven[Goal,Initial,a,ay] or agenty_moves[Goal,Initial,a,ay])
 		}
-	}
-	all p:Pass | {
-		all px:Initial.passx[p] | {
-			!in_passx[Goal,p,px] implies (passx_movee[Goal,Initial,p,px] or passx_movew[Goal,Initial,p,px])
-		}
-		all py:Initial.passy[p] | {
-			!in_passy[Goal,p,py] implies (passy_moven[Goal,Initial,p,py] or passy_moves[Goal,Initial,p,py])
+		all aa:Initial.agentalive[a] | {
+			!(Goal.agentalive[a] in aa) implies (agentalive_lava[Goal,Initial,a,aa])
 		}
 	}
-	all t:Taxi,p:Pass | {
-		all pnt:Initial.pint[p,t] | {
-			!in_pint[Goal,p,t,pnt] implies (pint_pickup[Goal,Initial,p,t,pnt] or pint_dropoff[Goal,Initial,p,t,pnt])
+	all gb:GlassBlock | {
+		all gbh:Initial.glassblockhits[gb] | {
+			!(Goal.glassblockhits[gb] in gbh) implies (glassblockhits_attack[Goal,Initial,gb,gbh])
+		}
+		all gbp:Initial.glassblockpresent[gb] | {
+			!(Goal.glassblockpresent[gb] in gbp) implies (glassblockpresent_axe[Goal,Initial,gb,gbp] or glassblockpresent_hand[Goal,Initial,gb,gbp])
 		}
 	}
-	*/
-} for 4 Int
+	all db:DirtBlock | {
+		all dbh:Initial.dirtblockhits[db] | {
+			!(Goal.dirtblockhits[db] in dbh) implies (dirtblockhits_attack[Goal,Initial,db,dbh])
+		}
+		all dbp:Initial.dirtblockpresent[db] | {
+			!(Goal.dirtblockpresent[db] in dbp) implies (dirtblockpresent_axe[Goal,Initial,db,dbp] or dirtblockpresent_hand[Goal,Initial,db,dbp])
+		}
+	}
+} for 5 Int
