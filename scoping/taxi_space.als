@@ -113,36 +113,26 @@ pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	*
 */
 one sig T extends Taxi {}
-one sig P0,P1,P2,P3,P4,P5,P6,P7,P8,P9 extends Pass {}
+one sig 
+	P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,
+	P10,P11,P12,P13,P14,P15,P16,P17,P18,P19,
+	P20,P21,P22,P23,P24,P25,P26,P27,P28,P29,
+	P30,P31,P32,P33,P34,P35,P36,P37,P38,P39,
+	P40,P41,P42,P43,P44,P45,P46,P47,P48,P49,
+	P50,P51,P52,P53,P54,P55,P56,P57,P58,P59,
+	P60,P61,P62,P63,P64,P65,P66,P67,P68,P69,
+	P70,P71,P72,P73,P74,P75,P76,P77,P78,P79 
+extends Pass {}
 pred initial[s:Time] {
 	0 in s.taxix[T] and 0 in s.taxiy[T]
-	0 in s.passx[P0] and 0 in s.passy[P0]
-	0 in s.passx[P1] and 0 in s.passy[P1]
-	0 in s.passx[P2] and 0 in s.passy[P2]
-	0 in s.passx[P3] and 0 in s.passy[P3]
-	0 in s.passx[P4] and 0 in s.passy[P4]
-	0 in s.passx[P5] and 0 in s.passy[P5]
-	0 in s.passx[P6] and 0 in s.passy[P6]
-	0 in s.passx[P7] and 0 in s.passy[P7]
-	0 in s.passx[P8] and 0 in s.passy[P8]
-	0 in s.passx[P9] and 0 in s.passy[P9]
-	False in s.pint[P0][T]
-	False in s.pint[P1][T]
-	False in s.pint[P2][T]
-	False in s.pint[P3][T]
-	False in s.pint[P4][T]
-	False in s.pint[P5][T]
-	False in s.pint[P6][T]
-	False in s.pint[P7][T]
-	False in s.pint[P8][T]
-	False in s.pint[P9][T]
+	all p:Pass | 0 in s.passx[p] and 4 in s.passy[p] and False in s.pint[p][T]
 }
 pred goal[s:Time] {
-	1 in s.taxix[T]
-	0 in s.taxiy[T]
-	1 in s.passx[P7]
-	0 in s.passy[P7]
-	False in s.pint[P7][T]
+	4 in s.taxix[T]
+	4 in s.taxiy[T]
+	4 in s.passx[P42]
+	4 in s.passy[P42]
+	False in s.pint[P42][T]
 }
 pred in_taxix[s:Time,t:Taxi,i:Int] {
 	s.taxix[t] in i
@@ -323,4 +313,4 @@ run space {
 			}
 		}
 	}
-} for 5 Int
+} for 4 Int
