@@ -1,0 +1,281 @@
+// How I'm abstracting (read: cheating) to make this MDP simpler to write down
+// 2. Agent can just pick up flowers from Dirt_Blocks
+// 3. Agent can break glass with 3 hits from the pickaxe and 6 by anything else
+// 4. Agent doesn't have control over swapping thru its inventory
+// 5. Agent has a cook_rabbit action that can be applied directly
+// 6. No orchid flower is assumed to be planted - they're all just there
+
+
+domain minecraft-fmdp {
+    requirements {
+        reward-deterministic,
+        cpf-deterministic,
+        preconditions
+    };
+
+    types {
+        Agent          : object;
+        Glass_Block    : object;
+        Apple          : object;
+        Potato         : object;
+        Raw_Rabbit     : object;
+        Cooked_Rabbit  : object;
+        Diamond_Axe    : object;
+        Orchid_Flower  : object;
+        Dirt_Block     : object;
+        Daisy_flower   : object;
+        Redstone_block : object;
+        lava           : object;
+    };
+
+    pvariables {
+    //////////////////////////////// States /////////////////////////////////
+    // Position variables
+        Agent-x(Agent)                 : { state-fluent, int, default=0 };
+        Agent-y(Agent)                 : { state-fluent, int, default=0 };
+        Agent-z(Agent)                 : { state-fluent, int, default=0 };
+        Agent-alive(Agent)             : { state-fluent, bool, default=true };
+        Agent-has-pickaxe(Agent)       : { state-fluent, bool, default=0 };
+        Agent-num-apples(Agent)        : { state-fluent, int, default=0 };
+        Agent-num-potatoes(Agent)        : { state-fluent, int, default=0 };
+        Agent-num-orchids(Agent)       : { state-fluent, int, default=0 };
+        Agent-num-daisy_flowers(Agent)        : { state-fluent, int, default=0 };
+        Agent-num-Raw_Rabbits(Agent)        : { state-fluent, int, default=0 };
+        Agent-num-Cooked_Rabbits(Agent)        : { state-fluent, int, default=0 };
+
+        Glass_Block-x(Glass_Block)     : { state-fluent, int, default=0 };
+        Glass_Block-y(Glass_Block)     : { state-fluent, int, default=0 };
+        Glass_Block-z(Glass_Block)     : { state-fluent, int, default=0 };
+        Glass_Block-hits(Glass_Block)  : { state-fluent, int, default=0 };
+        Glass_Block-present(Glass_Block) : { state-fluent, bool, default=true };
+
+        Dirt_Block-x(Dirt_Block)     : { state-fluent, int, default=0 };
+        Dirt_Block-y(Dirt_Block)     : { state-fluent, int, default=0 };
+        Dirt_Block-z(Dirt_Block)     : { state-fluent, int, default=0 };
+        Dirt_Block-hits(Dirt_Block)  : { state-fluent, int, default=0 };
+        Dirt_Block-present(Dirt_Block) : { state-fluent, bool, default=true };
+
+        Apple-x(Apple)     : { state-fluent, int, default=0 };
+        Apple-y(Apple)     : { state-fluent, int, default=0 };
+        Apple-z(Apple)     : { state-fluent, int, default=0 };
+        Apple-present(Apple) : { state-fluent, bool, default=true };
+
+        Daisy_flower-x(Daisy_flower)     : { state-fluent, int, default=0 };
+        Daisy_flower-y(Daisy_flower)     : { state-fluent, int, default=0 };
+        Daisy_flower-z(Daisy_flower)     : { state-fluent, int, default=0 };
+        Daisy_flower-present(Daisy_flower) : { state-fluent, bool, default=true };
+
+        Raw_Rabbit-x(Raw_Rabbit)     : { state-fluent, int, default=0 };
+        Raw_Rabbit-y(Raw_Rabbit)     : { state-fluent, int, default=0 };
+        Raw_Rabbit-z(Raw_Rabbit)     : { state-fluent, int, default=0 };
+        Raw_Rabbit-present(Raw_Rabbit) : { state-fluent, bool, default=true };
+
+        Orchid-x(Orchid_Flower)     : { state-fluent, int, default=0 };
+        Orchid-y(Orchid_Flower)     : { state-fluent, int, default=0 };
+        Orchid-z(Orchid_Flower)     : { state-fluent, int, default=0 };
+        Orchid-present(Orchid_Flower) : { state-fluent, bool, default=true };
+
+        Potato-x(Potato)     : { state-fluent, int, default=0 };
+        Potato-y(Potato)     : { state-fluent, int, default=0 };
+        Potato-z(Potato)     : { state-fluent, int, default=0 };
+        Potato-present(Potato) : { state-fluent, bool, default=true };
+
+
+    //////////////////////////////// Actions ////////////////////////////////
+        move_north(Agent)                           : { action-fluent, bool, default = false };
+        move_south(Agent)                           : { action-fluent, bool, default = false };
+        move_east(Agent)                            : { action-fluent, bool, default = false };
+        move_west(Agent)                            : { action-fluent, bool, default = false };
+        attack(Agent)                    : { action-fluent, bool, default = false };
+        cook_rabbit(Agent)                   : { action-fluent, bool, default = false };
+
+    //////////////////////////////// Non-Fluents ////////////////////////////////
+    // Wall location
+        LAVA_X(lava)                                 : {non-fluent, int, default = 0};
+        LAVA_Y(lava)                                 : {non-fluent, int, default = 0};
+        LAVA_Z(lava)                                 : {non-fluent, int, default = 0};
+
+    //Width and height of domain
+        MAX_Y()               : { non-fluent, int, default = 1};
+        MAX_X()               : { non-fluent, int, default = 1};
+
+    };
+
+    cdfs {
+        Agent-x'(?a) =
+          if ( move_east(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) + 1 ) & ( Glass_Block-y(gb) == Agent-y(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 )] )
+                                               & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) + 1 ) & ( Dirt_Block-y(sb) == Agent-y(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 )] ))
+            then Agent-x(?a) + 1
+          else if( move_west(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) - 1 ) & ( Glass_Block-y(gb) == Agent-y(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a)) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 )] )
+                                                   & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) - 1 ) & ( Dirt_Block-y(sb) == Agent-y(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a)) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 )] ))
+            then Agent-x(?a) - 1
+          else
+            Agent-x(?a);
+
+        Agent-y'(?a) =
+            if ( move_north(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) ) & ( Glass_Block-y(gb) == Agent-y(?a) + 1) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 2 )] )
+                                                  & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) ) & ( Dirt_Block-y(sb) == Agent-y(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 2 )] ) )
+              then Agent-y(?a) + 1
+            else if( move_west(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) ) & ( Glass_Block-y(gb) == Agent-y(?a) - 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 2 )] )
+                                                     & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) ) & ( Dirt_Block-y(sb) == Agent-y(?a) - 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 2 )] ))
+              then Agent-y(?a) - 1
+            else
+              Agent-y(?a);
+
+        Agent-z'(?a) =
+            Agent-z(?a);
+
+        Agent-alive'(?a) =
+            if ( exists_{ ?la: lava } [ ( Agent-x(?a) == LAVA_X(?la) ) | ( Agent-y(?a) == LAVA_Y(?la) ) | ( Agent-y(?a) == LAVA_Y(?la) ) ] )
+              then false
+            else true;
+
+///////////////////////////////////////
+
+        Glass_Block-hits(?g) =
+            if ( Agent-alive(?a) & exists_{?a : agent} [ Glass_Block-y(?g) - 1 == Agent-y{?a} & ((Glass_Block-z(?g) - 1 == Agent-z(?a)) | (Glass_Block-z(?g) - 2 == Agent-z(?a))) & attack(?a) ] )
+              then Glass_Block-hits(?g) + 1
+            else Glass_Block-hits(?g);
+
+        Glass_Block-present(?g) =
+            if(Agent-has-pickaxe(?a) & Glass_Block-hits(?g) >= 3)
+              then false
+            else if(Glass_Block-hits(?g) >= 7)
+              then false
+            else true;
+
+///////////////////////////////////////
+
+      Dirt_Block-hits(?g) =
+          if ( Agent-alive(?a) & exists_{?a : agent} [ Dirt_Block-y(?g) - 1 == Agent-y{?a} & ((Dirt_Block-z(?g) - 1 == Agent-z(?a)) | (Dirt_Block-z(?g) - 2 == Agent-z(?a))) & attack(?a) ] )
+            then Dirt_Block-hits(?g) + 1
+          else Dirt_Block-hits(?g);
+
+      Dirt_Block-present(?g) =
+          if(Agent-has-pickaxe(?a) & Dirt_Block-hits(?g) >= 4)
+            then false
+          else if(Dirt_Block-hits(?g) >= 10)
+            then false
+          else true;
+
+///////////////////////////////////////
+
+        Agent-num-apples'(?a) =
+            if(Agent-alive(?a) & exists_{?apl : Apple} [ Apple-present(?apl) & Apple-x(?apl) == Agent-x(?a) & Apple-y(?apl) == Agent-y(?a) & Apple-z(?apl) == Agent-z(?a) ]
+              then Agent-num-apples(?a) + 1
+            else
+              Agent-num-apples(?a);
+
+        Apple-present'(?apl) =
+            if(exists_{?a : Agent} [ Apple-x(?apl) == Agent-x(?a) & Apple-y(?apl) == Agent-y(?a) & Apple-z(?apl) == Agent-z(?a) ])
+              then false
+            else
+              true;
+
+        Apple-x'(?apl) =  Apple-x(?apl);
+        Apple-y'(?apl) =  Apple-y(?apl);
+        Apple-z'(?apl) =  Apple-z(?apl);
+
+///////////////////////////////////////
+
+        Agent-num-potatoes'(?a) =
+          if(Agent-alive(?a) & exists_{?po : Potato} [ Potato-present(?po) & Potato-x(?po) == Agent-x(?a) & Potato-y(?po) == Agent-y(?a) & Potato-z(?po) == Agent-z(?a) ]
+            then Agent-num-potatoes(?a) + 1
+          else
+            Agent-num-potatoes(?a);
+
+        Potato-present'(?po) =
+          if(exists_{?a : Agent} [ Potato-x(?po) == Agent-x(?a) & Potato-y(?po) == Agent-y(?a) & Potato-z(?po) == Agent-z(?a) ])
+            then false
+          else
+            true;
+
+        Potato-x'(?po) =  Potato-x(?po);
+        Potato-y'(?po) =  Potato-y(?po);
+        Potato-z'(?po) =  Potato-z(?po);
+
+///////////////////////////////////////
+
+        Agent-num-orchids'(?a) =
+            if(Agent-alive(?a) & exists_{?apl : Orchid} [ Orchid-present(?apl) & Orchid-x(?apl) == Agent-x(?a) & Orchid-y(?apl) == Agent-y(?a) & Orchid-z(?apl) == Agent-z(?a) ]
+              then Agent-num-orchids(?a) + 1
+            else
+              Agent-num-orchids(?a);
+
+        Orchid-present'(?apl) =
+            if(exists_{?a : Agent} [ Orchid-x(?apl) == Agent-x(?a) & Orchid-y(?apl) == Agent-y(?a) & Orchid-z(?apl) == Agent-z(?a) ])
+              then false
+            else
+              true;
+
+        Orchid-x'(?apl) =  Orchid-x(?apl);
+        Orchid-y'(?apl) =  Orchid-y(?apl);
+        Orchid-z'(?apl) =  Orchid-z(?apl);
+
+///////////////////////////////////////
+
+        Agent-num-daisy_flowers'(?a) =
+            if(Agent-alive(?a) & exists_{?apl : Daisy_flower} [ Daisy_flower-present(?apl) & Daisy_flower-x(?apl) == Agent-x(?a) & Daisy_flower-y(?apl) == Agent-y(?a) & Daisy_flower-z(?apl) == Agent-z(?a) ]
+              then Agent-num-daisy_flowers(?a) + 1
+            else
+              Agent-num-Daisy_flowers(?a);
+
+        Daisy_flower-present'(?apl) =
+            if(exists_{?a : Agent} [ Daisy_flower-x(?apl) == Agent-x(?a) & Daisy_flower-y(?apl) == Agent-y(?a) & Daisy_flower-z(?apl) == Agent-z(?a) ])
+              then false
+            else
+              true;
+
+        Daisy_flower-x'(?apl) =  Daisy_flower-x(?apl);
+        Daisy_flower-y'(?apl) =  Daisy_flower-y(?apl);
+        Daisy_flower-z'(?apl) =  Daisy_flower-z(?apl);
+
+///////////////////////////////////////
+
+        Agent-num-Raw_Rabbits'(?a) =
+            if(Agent-alive(?a) & exists_{?apl : Raw_Rabbit} [ Raw_Rabbit-present(?apl) & Raw_Rabbit-x(?apl) == Agent-x(?a) & Raw_Rabbit-y(?apl) == Agent-y(?a) & Raw_Rabbit-z(?apl) == Agent-z(?a) ]
+              then Agent-num-Raw_Rabbits(?a) + 1
+            else
+              Agent-num-Raw_Rabbits(?a);
+
+        Raw_Rabbit-present'(?apl) =
+            if(exists_{?a : Agent} [ Raw_Rabbit-x(?apl) == Agent-x(?a) & Raw_Rabbit-y(?apl) == Agent-y(?a) & Raw_Rabbit-z(?apl) == Agent-z(?a) ])
+              then false
+            else
+              true;
+
+        Raw_Rabbit-x'(?apl) =  Raw_Rabbit-x(?apl);
+        Raw_Rabbit-y'(?apl) =  Raw_Rabbit-y(?apl);
+        Raw_Rabbit-z'(?apl) =  Raw_Rabbit-z(?apl);
+
+///////////////////////////////////////
+
+        Agent-num-Cooked_Rabbits'(?a) =
+            if(Agent-alive(?a) & cook_rabbit(?a) & Agent-num-Raw_Rabbits(?a) >= 1)
+              Agent-num-Cooked_Rabbits(?a) + 1
+            else
+              Agent-num-Cooked_Rabbits(?a);
+
+    };
+
+    reward =
+          if ( exists_{ ?p : passenger } [ PASSENGERS_YOU_CARE_FOR(?p) & forall_{ ?t : taxi} [ ~passenger-in-taxi(?p, ?t) ]   & (passenger-x-curr(?p) == PASSENGER_GOAL_X(?p) & (passenger-y-curr(?p) == PASSENGER_GOAL_Y(?p) ) ) ] )
+              then 5
+          else -5;
+
+    action-preconditions {
+    // there can only be one move per turn
+          ( forall_{ ?a : Agent } [move_west(?a) + move_east(?a) + move_south(?a) + move_north(?a) + attack(?a) + cook_rabbit(?a) ] <= 1 ) ;
+
+    // don't move outside of the grid
+        forall_{ ?a : Agent } [ move_west(?t) => Agent-x(?t) > 0 ];
+        forall_{ ?a : Agent } [ move_east(?t) => Agent-x(?t) < MAX_X() ];
+        forall_{ ?a : Agent } [ move_north(?t) => Agent-y(?t) < MAX_Y() ];
+        forall_{ ?a: Agent } [ move_south(?t) => Agent-y(?t) > 0 ];
+
+    };
+    state-action-constraints {
+        // All entities must be in grid. This is implied by above (except for walls), but should be easier to parse when stated explicitly. WOuld this alone imply the former?
+        (Exact formulation left out because it's probably not helpful...)
+    };
+}
