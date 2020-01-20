@@ -112,88 +112,40 @@ pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 */
 one sig T extends Taxi {}
 one sig P0,P1,P2,P3,P4,P5,P6,P7,P8,P9 extends Pass {}
-pred initial[s:Time] {
-	all t:Taxi | {
-		initial_taxix[t,s.taxix[t]]
-		initial_taxiy[t,s.taxiy[t]]
-	}
-	all p:Pass | {
-		initial_passx[p,s.passx[p]]
-		initial_passy[p,s.passy[p]]
-	}
-	all p:Pass,t:Taxi | {
-		initial_pint[p,t,s.pint[p,t]]
-	}
-}
 pred goal[s:Time] {
-	all t:Taxi | {
-		goal_taxix[t,s.taxix[t]]
-		goal_taxiy[t,s.taxiy[t]]
-	}
-	all p:Pass | {
-		goal_passx[p,s.passx[p]]
-		goal_passy[p,s.passy[p]]
-	}
-	all p:Pass,t:Taxi | {
-		goal_pint[p,t,s.pint[p,t]]
-	}
+	1 in s.taxix[T]
+	0 in s.taxiy[T]
+	1 in s.passx[P7]
+	0 in s.passy[P7]
+	False in s.pint[P7][T]
 }
-pred goal_taxix[t:Taxi,i:Int] {
-	T in t implies 1 in i
-}
-pred goal_taxiy[t:Taxi,i:Int] {
-	T in t implies 0 in i
-}
-pred goal_passx[p:Pass,i:Int] {
-	P7 in p implies 1 in i
-}
-pred goal_passy[p:Pass,i:Int] {
-	P7 in p implies 0 in i
-}
-pred goal_pint[p:Pass,t:Taxi,b:Bool] {
-	(P7 in p and T in t) implies False in b
-}
-pred initial_taxix[t:Taxi,i:Int] {
-	T in t implies 0 in i
-}
-pred initial_taxiy[t:Taxi,i:Int] {
-	T in t implies 0 in i
-}
-pred initial_passx[p:Pass,i:Int] {
-	P0 in p implies 0 in i
-	P1 in p implies 0 in i
-	P2 in p implies 0 in i
-	P3 in p implies 0 in i
-	P4 in p implies 0 in i
-	P5 in p implies 0 in i
-	P6 in p implies 0 in i
-	P7 in p implies 0 in i
-	P8 in p implies 0 in i
-	P9 in p implies 0 in i
-}
-pred initial_passy[p:Pass,i:Int] {
-	P0 in p implies 0 in i
-	P1 in p implies 0 in i
-	P2 in p implies 0 in i
-	P3 in p implies 0 in i
-	P4 in p implies 0 in i
-	P5 in p implies 0 in i
-	P6 in p implies 0 in i
-	P7 in p implies 0 in i
-	P8 in p implies 0 in i
-	P9 in p implies 0 in i
-}
-pred initial_pint[p:Pass,t:Taxi,b:Bool] {
-	(P0 in p and T in t) implies False in b
-	(P1 in p and T in t) implies False in b
-	(P2 in p and T in t) implies False in b
-	(P3 in p and T in t) implies False in b
-	(P4 in p and T in t) implies False in b
-	(P5 in p and T in t) implies False in b
-	(P6 in p and T in t) implies False in b
-	(P7 in p and T in t) implies False in b
-	(P8 in p and T in t) implies False in b
-	(P9 in p and T in t) implies False in b
+pred in_taxix[s:Time,ss:Time,t:Taxi] { s.taxix[t] in ss.taxix[t] }
+pred in_taxiy[s:Time,ss:Time,t:Taxi] { s.taxiy[t] in ss.taxiy[t] }
+pred in_passx[s:Time,ss:Time,p:Pass] { s.passx[p] in ss.passx[p] }
+pred in_passy[s:Time,ss:Time,p:Pass] { s.passy[p] in ss.passy[p] }
+pred in_pint[s:Time,ss:Time,p:Pass,t:Taxi] { s.pint[p][t] in ss.pint[p][t] }
+pred initial[s:Time] {
+	0 in s.taxix[T] and 0 in s.taxiy[T]
+	0 in s.passx[P0] and 0 in s.passy[P0]
+	0 in s.passx[P1] and 0 in s.passy[P1]
+	0 in s.passx[P2] and 0 in s.passy[P2]
+	0 in s.passx[P3] and 0 in s.passy[P3]
+	0 in s.passx[P4] and 0 in s.passy[P4]
+	0 in s.passx[P5] and 0 in s.passy[P5]
+	0 in s.passx[P6] and 0 in s.passy[P6]
+	0 in s.passx[P7] and 0 in s.passy[P7]
+	0 in s.passx[P8] and 0 in s.passy[P8]
+	0 in s.passx[P9] and 0 in s.passy[P9]
+	False in s.pint[P0][T]
+	False in s.pint[P1][T]
+	False in s.pint[P2][T]
+	False in s.pint[P3][T]
+	False in s.pint[P4][T]
+	False in s.pint[P5][T]
+	False in s.pint[P6][T]
+	False in s.pint[P7][T]
+	False in s.pint[P8][T]
+	False in s.pint[P9][T]
 }
 /*
 	*
@@ -212,31 +164,30 @@ fun num_actions[s:one Time,t:Taxi] : one Int {
 run sequence {
 	-- valid planning sequence
 	initial[first]
-	all s:Time-last | all t:Taxi | num_actions[s,t] = 1
-	all t:Taxi | num_actions[last,t] = 0
+	all t:Taxi | (all s:Time-last | num_actions[s,t] = 1) and num_actions[last,t] = 0
 	goal[last]
 	-- for all time, all objects, take action (positive effects / negative framing) until all factors reach initial state
 	all s:Time-last | let ss=s.next | {
 		-- Action Effects (what's possible)
 		all t:Taxi | {
 			all tx:s.taxix[t] | {
-				!goal_taxix[t,tx] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx])
+				!in_taxix[last,s,t] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx])
 			}
 			all ty:s.taxiy[t] | {
-				!goal_taxiy[t,ty] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty])
+				!in_taxiy[last,s,t] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty])
 			}
 		}
 		all p:Pass | {
 			all px:s.passx[p] | {
-				!goal_passx[p,px] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px])
+				!in_passx[last,s,p] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px])
 			}
 			all py:s.passy[p] | {
-				!goal_passy[p,py] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py])
+				!in_passy[last,s,p] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py])
 			}
 		}
 		all t:Taxi,p:Pass | {
 			all pnt:s.pint[p,t] | {
-				!goal_pint[p,t,pnt] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt])
+				!in_pint[last,s,p,t] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt])
 			}
 		}
 		-- Action Frames (what's impossible given what possibility occured)
