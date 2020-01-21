@@ -21,70 +21,55 @@ abstract sig Time {
 }
 one sig Initial,Goal extends Time {}
 -- RDDL: cdf { taxix } 
-pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
+pred taxix_movee[s:Time,ss:Time,t:Taxi] {
 	Int in ss.taxix[t]
 }
-pred taxix_movew[s:Time,ss:Time,t:Taxi,tx:Int] {
+pred taxix_movew[s:Time,ss:Time,t:Taxi] {
 	Int in ss.taxix[t]
-}
-pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
-	tx in ss.taxix[t]
 }
 -- RDDL: cdf { taxiy } 
-pred taxiy_moven[s:Time,ss:Time,t:Taxi,ty:Int] {
+pred taxiy_moven[s:Time,ss:Time,t:Taxi] {
 	Int in ss.taxiy[t]
 }
-pred taxiy_moves[s:Time,ss:Time,t:Taxi,ty:Int] {
+pred taxiy_moves[s:Time,ss:Time,t:Taxi] {
 	Int in ss.taxiy[t]
-}
-pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
-	ty in ss.taxiy[t]
 }
 -- RDDL: cdf { passx } 
-pred passx_movee[s:Time,ss:Time,p:Pass,px:Int] {
+pred passx_movee[s:Time,ss:Time,p:Pass] {
 	all t:Taxi | {
 		Bool in s.pint[p,t]
 	}
 	Int in ss.passx[p]
 }
-pred passx_movew[s:Time,ss:Time,p:Pass,px:Int] {
+pred passx_movew[s:Time,ss:Time,p:Pass] {
 	all t:Taxi | {
 		Bool in s.pint[p,t]
 	}
 	Int in ss.passx[p]
-}
-pred passx_else[s:Time,ss:Time,p:Pass,px:Int] {
-	px in ss.passx[p]
 }
 -- RDDL: cdf { passy } 
-pred passy_moven[s:Time,ss:Time,p:Pass,py:Int] {
+pred passy_moven[s:Time,ss:Time,p:Pass] {
 	all t:Taxi | {
 		Bool in s.pint[p,t]
 	}
 	Int in ss.passy[p]
 }
-pred passy_moves[s:Time,ss:Time,p:Pass,py:Int] {
+pred passy_moves[s:Time,ss:Time,p:Pass] {
 	all t:Taxi | {
 		Bool in s.pint[p,t]
 	}
 	Int in ss.passy[p]
-}
-pred passy_else[s:Time,ss:Time,p:Pass,py:Int] {
-	py in ss.passy[p]
 }
 -- RDDL: cdf { pint }
-pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
+pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi] {
 	Int in s.taxix[t] and Int in s.passx[p]
 	Int in s.taxiy[t] and Int in s.passy[p]
 	Bool in s.pint[p,t]
 	Bool in ss.pint[p,t]
 }
-pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
+pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi] {
 	Bool in s.pint[p,t]
 	Bool in ss.pint[p,t]
-}
-pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
-	pnt in ss.pint[p,t]
 }
 /*
 	*
@@ -134,24 +119,14 @@ run scope {
 	initial[Initial]
 	goal[Goal]
 	all t:Taxi | {
-		all tx:Initial.taxix[t] | {
-			!(Goal.taxix[t] in tx) implies (taxix_movee[Goal,Initial,t,tx] or taxix_movew[Goal,Initial,t,tx])
-		}
-		all ty:Initial.taxiy[t] | {
-			!(Goal.taxiy[t] in ty) implies (taxiy_moven[Goal,Initial,t,ty] or taxiy_moves[Goal,Initial,t,ty])
-		}
+		!(Goal.taxix[t] in Initial.taxix[t]) implies (taxix_movee[Goal,Initial,t] or taxix_movew[Goal,Initial,t])
+		!(Goal.taxiy[t] in Initial.taxiy[t]) implies (taxiy_moven[Goal,Initial,t] or taxiy_moves[Goal,Initial,t])
 	}
 	all p:Pass | {
-		all px:Initial.passx[p] | {
-			!(Goal.passx[p] in px) implies (passx_movee[Goal,Initial,p,px] or passx_movew[Goal,Initial,p,px])
-		}
-		all py:Initial.passy[p] | {
-			!(Goal.passy[p] in py) implies (passy_moven[Goal,Initial,p,py] or passy_moves[Goal,Initial,p,py])
-		}
+		!(Goal.passx[p] in Initial.passx[p]) implies (passx_movee[Goal,Initial,p] or passx_movew[Goal,Initial,p])
+		!(Goal.passy[p] in Initial.passy[p]) implies (passy_moven[Goal,Initial,p] or passy_moves[Goal,Initial,p])
 	}
 	all t:Taxi,p:Pass | {
-		all pnt:Initial.pint[p,t] | {
-			!(Goal.pint[p,t] in pnt) implies (pint_pickup[Goal,Initial,p,t,pnt] or pint_dropoff[Goal,Initial,p,t,pnt])
-		}
+		!(Goal.pint[p,t] in Initial.pint[p,t]) implies (pint_pickup[Goal,Initial,p,t] or pint_dropoff[Goal,Initial,p,t])
 	}
 } for 5 Int
