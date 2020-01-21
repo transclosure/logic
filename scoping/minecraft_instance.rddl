@@ -1,281 +1,644 @@
-// How I'm abstracting (read: cheating) to make this MDP simpler to write down
-// 2. Agent can just pick up flowers from Dirt_Blocks
-// 3. Agent can break glass with 3 hits from the pickaxe and 6 by anything else
-// 4. Agent doesn't have control over swapping thru its inventory
-// 5. Agent has a cook_rabbit action that can be applied directly
-// 6. No orchid flower is assumed to be planted - they're all just there
-
-
-domain minecraft-fmdp {
-    requirements {
-        reward-deterministic,
-        cpf-deterministic,
-        preconditions
+instance Minecraft_FMDP_domain1 {
+    domain = minecraft-fmdp;
+    objects {
+        Agent               : { Steve };
+        Glass_Block         : { gb1,gb2,gb3,gb4,gb5,gb6,gb7,gb8,gb9,gb10,gb11,gb12,gb13,gb14,gb15,gb16,gb17,gb18,gb19,gb20,gb21,gb22 };
+        Apple               : { a1, a2, a4, a4 };
+        Potato              : { p1 };
+        Raw_Rabbit          : { RR1 };
+        Cooked_Rabbit       : { CR1 };
+        Diamond_Axe         : { DA1 };
+        Orchid_Flower       : { orf1,orf2,orf3,orf4,orf5,orf6,orf7,orf8,orf9,orf10,orf11,orf12,orf13,orf14,orf15,orf16,orf17,orf18,orf19,orf20,orf21,orf22,orf23,orf24,orf25,orf26,orf27,orf28,orf29 };
+        Dirt_Block         : { drb1,drb2,drb3,drb4,drb5,drb6,drb7,drb8,drb9,drb10,drb11,drb12,drb13,drb14,drb15,drb16,drb17,drb18,drb19,drb20,drb21,drb22 };
+        Daisy_flower         : { daf1,daf2,daf3,daf4,daf5,daf6,daf7,daf8,daf9,daf10,daf11,daf12,daf13,daf14,daf15,daf16,daf17,daf18,daf19,daf20,daf21,daf22 };
+        Redstone_block       : { rb1 };
+        lava               : { la1,la2,la3,la4,la5,la6,la7,la8,la9,la10,la11,la12,la13,la14,la15,la16,la17,la18,la19,la20,la21,la22,la23,la24,la25,la26,la27,la28,la29,la30,la31,la32,la33,la34,la35,la36,la37,la38,la39,la40,la41,la42,la43 };
     };
 
-    types {
-        Agent          : object;
-        Glass_Block    : object;
-        Apple          : object;
-        Potato         : object;
-        Raw_Rabbit     : object;
-        Cooked_Rabbit  : object;
-        Diamond_Axe    : object;
-        Orchid_Flower  : object;
-        Dirt_Block     : object;
-        Daisy_flower   : object;
-        Redstone_block : object;
-        lava           : object;
-    };
+    non-fluents {
+        // Lava
+        LAVA_X(la23) = 4;
+        LAVA_Y(la23) = 7;
+        LAVA_Z(la23) = 0;
 
-    pvariables {
-    //////////////////////////////// States /////////////////////////////////
-    // Position variables
-        Agent-x(Agent)                 : { state-fluent, int, default=0 };
-        Agent-y(Agent)                 : { state-fluent, int, default=0 };
-        Agent-z(Agent)                 : { state-fluent, int, default=0 };
-        Agent-alive(Agent)             : { state-fluent, bool, default=true };
-        Agent-has-pickaxe(Agent)       : { state-fluent, bool, default=0 };
-        Agent-num-apples(Agent)        : { state-fluent, int, default=0 };
-        Agent-num-potatoes(Agent)        : { state-fluent, int, default=0 };
-        Agent-num-orchids(Agent)       : { state-fluent, int, default=0 };
-        Agent-num-daisy_flowers(Agent)        : { state-fluent, int, default=0 };
-        Agent-num-Raw_Rabbits(Agent)        : { state-fluent, int, default=0 };
-        Agent-num-Cooked_Rabbits(Agent)        : { state-fluent, int, default=0 };
+        LAVA_X(la1) = 1;
+        LAVA_Y(la1) = 10;
+        LAVA_Z(la1) = 0;
+        LAVA_X(la2) = 2;
+        LAVA_Y(la2) = 10;
+        LAVA_Z(la2) = 0;
+        LAVA_X(la3) = 3;
+        LAVA_Y(la3) = 10;
+        LAVA_Z(la3) = 0;
+        LAVA_X(la4) = 4;
+        LAVA_Y(la4) = 10;
+        LAVA_Z(la4) = 0;
+        LAVA_X(la5) = 5;
+        LAVA_Y(la5) = 10;
+        LAVA_Z(la5) = 0;
+        LAVA_X(la6) = 6;
+        LAVA_Y(la6) = 10;
+        LAVA_Z(la6) = 0;
+        LAVA_X(la7) = 7;
+        LAVA_Y(la7) = 10;
+        LAVA_Z(la7) = 0;
+        LAVA_X(la8) = 8;
+        LAVA_Y(la8) = 10;
+        LAVA_Z(la8) = 0;
+        LAVA_X(la9) = 9;
+        LAVA_Y(la9) = 10;
+        LAVA_Z(la9) = 0;
+        LAVA_X(la10) = 10;
+        LAVA_Y(la10) = 10;
+        LAVA_Z(la10) = 0;
+        LAVA_X(la11) = 11;
+        LAVA_Y(la11) = 10;
+        LAVA_Z(la11) = 0;
 
-        Glass_Block-x(Glass_Block)     : { state-fluent, int, default=0 };
-        Glass_Block-y(Glass_Block)     : { state-fluent, int, default=0 };
-        Glass_Block-z(Glass_Block)     : { state-fluent, int, default=0 };
-        Glass_Block-hits(Glass_Block)  : { state-fluent, int, default=0 };
-        Glass_Block-present(Glass_Block) : { state-fluent, bool, default=true };
+        LAVA_X(la12) = 1;
+        LAVA_Y(la12) = 11;
+        LAVA_Z(la12) = 0;
+        LAVA_X(la13) = 2;
+        LAVA_Y(la13) = 11;
+        LAVA_Z(la13) = 0;
+        LAVA_X(la14) = 3;
+        LAVA_Y(la14) = 11;
+        LAVA_Z(la14) = 0;
+        LAVA_X(la15) = 4;
+        LAVA_Y(la15) = 11;
+        LAVA_Z(la15) = 0;
+        LAVA_X(la16) = 5;
+        LAVA_Y(la16) = 11;
+        LAVA_Z(la16) = 0;
+        LAVA_X(la17) = 6;
+        LAVA_Y(la17) = 11;
+        LAVA_Z(la17) = 0;
+        LAVA_X(la18) = 7;
+        LAVA_Y(la18) = 11;
+        LAVA_Z(la18) = 0;
+        LAVA_X(la19) = 8;
+        LAVA_Y(la19) = 11;
+        LAVA_Z(la19) = 0;
+        LAVA_X(la20) = 9;
+        LAVA_Y(la20) = 11;
+        LAVA_Z(la20) = 0;
+        LAVA_X(la21) = 10;
+        LAVA_Y(la21) = 11;
+        LAVA_Z(la21) = 0;
+        LAVA_X(la22) = 11;
+        LAVA_Y(la22) = 11;
+        LAVA_Z(la22) = 0;
 
-        Dirt_Block-x(Dirt_Block)     : { state-fluent, int, default=0 };
-        Dirt_Block-y(Dirt_Block)     : { state-fluent, int, default=0 };
-        Dirt_Block-z(Dirt_Block)     : { state-fluent, int, default=0 };
-        Dirt_Block-hits(Dirt_Block)  : { state-fluent, int, default=0 };
-        Dirt_Block-present(Dirt_Block) : { state-fluent, bool, default=true };
+        LAVA_X(la24) = 8;
+        LAVA_Y(la24) = 5;
+        LAVA_Z(la24) = 0;
+        LAVA_X(la25) = 8;
+        LAVA_Y(la25) = 6;
+        LAVA_Z(la25) = 0;
+        LAVA_X(la26) = 8;
+        LAVA_Y(la26) = 7;
+        LAVA_Z(la26) = 0;
+        LAVA_X(la27) = 8;
+        LAVA_Y(la27) = 8;
+        LAVA_Z(la27) = 0;
+        LAVA_X(la28) = 8;
+        LAVA_Y(la28) = 9;
+        LAVA_Z(la28) = 0;
 
-        Apple-x(Apple)     : { state-fluent, int, default=0 };
-        Apple-y(Apple)     : { state-fluent, int, default=0 };
-        Apple-z(Apple)     : { state-fluent, int, default=0 };
-        Apple-present(Apple) : { state-fluent, bool, default=true };
+        LAVA_X(la29) = 9;
+        LAVA_Y(la29) = 5;
+        LAVA_Z(la29) = 0;
+        LAVA_X(la30) = 9;
+        LAVA_Y(la30) = 6;
+        LAVA_Z(la30) = 0;
+        LAVA_X(la31) = 9;
+        LAVA_Y(la31) = 7;
+        LAVA_Z(la31) = 0;
+        LAVA_X(la32) = 9;
+        LAVA_Y(la32) = 8;
+        LAVA_Z(la32) = 0;
+        LAVA_X(la33) = 9;
+        LAVA_Y(la33) = 9;
+        LAVA_Z(la33) = 0;
 
-        Daisy_flower-x(Daisy_flower)     : { state-fluent, int, default=0 };
-        Daisy_flower-y(Daisy_flower)     : { state-fluent, int, default=0 };
-        Daisy_flower-z(Daisy_flower)     : { state-fluent, int, default=0 };
-        Daisy_flower-present(Daisy_flower) : { state-fluent, bool, default=true };
+        LAVA_X(la34) = 10;
+        LAVA_Y(la34) = 5;
+        LAVA_Z(la34) = 0;
+        LAVA_X(la35) = 10;
+        LAVA_Y(la35) = 6;
+        LAVA_Z(la35) = 0;
+        LAVA_X(la36) = 10;
+        LAVA_Y(la36) = 7;
+        LAVA_Z(la36) = 0;
+        LAVA_X(la37) = 10;
+        LAVA_Y(la37) = 8;
+        LAVA_Z(la37) = 0;
+        LAVA_X(la38) = 10;
+        LAVA_Y(la38) = 9;
+        LAVA_Z(la38) = 0;
 
-        Raw_Rabbit-x(Raw_Rabbit)     : { state-fluent, int, default=0 };
-        Raw_Rabbit-y(Raw_Rabbit)     : { state-fluent, int, default=0 };
-        Raw_Rabbit-z(Raw_Rabbit)     : { state-fluent, int, default=0 };
-        Raw_Rabbit-present(Raw_Rabbit) : { state-fluent, bool, default=true };
+        LAVA_X(la39) = 11;
+        LAVA_Y(la39) = 5;
+        LAVA_Z(la39) = 0;
+        LAVA_X(la40) = 11;
+        LAVA_Y(la40) = 6;
+        LAVA_Z(la40) = 0;
+        LAVA_X(la41) = 11;
+        LAVA_Y(la41) = 7;
+        LAVA_Z(la41) = 0;
+        LAVA_X(la42) = 11;
+        LAVA_Y(la42) = 8;
+        LAVA_Z(la42) = 0;
+        LAVA_X(la43) = 11;
+        LAVA_Y(la43) = 9;
+        LAVA_Z(la43) = 0;
 
-        Orchid-x(Orchid_Flower)     : { state-fluent, int, default=0 };
-        Orchid-y(Orchid_Flower)     : { state-fluent, int, default=0 };
-        Orchid-z(Orchid_Flower)     : { state-fluent, int, default=0 };
-        Orchid-present(Orchid_Flower) : { state-fluent, bool, default=true };
+        // constraints
+        MAX_X=11;
+        MAX_Y=11;
 
-        Potato-x(Potato)     : { state-fluent, int, default=0 };
-        Potato-y(Potato)     : { state-fluent, int, default=0 };
-        Potato-z(Potato)     : { state-fluent, int, default=0 };
-        Potato-present(Potato) : { state-fluent, bool, default=true };
-
-
-    //////////////////////////////// Actions ////////////////////////////////
-        move_north(Agent)                           : { action-fluent, bool, default = false };
-        move_south(Agent)                           : { action-fluent, bool, default = false };
-        move_east(Agent)                            : { action-fluent, bool, default = false };
-        move_west(Agent)                            : { action-fluent, bool, default = false };
-        attack(Agent)                    : { action-fluent, bool, default = false };
-        cook_rabbit(Agent)                   : { action-fluent, bool, default = false };
-
-    //////////////////////////////// Non-Fluents ////////////////////////////////
-    // Wall location
-        LAVA_X(lava)                                 : {non-fluent, int, default = 0};
-        LAVA_Y(lava)                                 : {non-fluent, int, default = 0};
-        LAVA_Z(lava)                                 : {non-fluent, int, default = 0};
-
-    //Width and height of domain
-        MAX_Y()               : { non-fluent, int, default = 1};
-        MAX_X()               : { non-fluent, int, default = 1};
-
-    };
-
-    cdfs {
-        Agent-x'(?a) =
-          if ( move_east(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) + 1 ) & ( Glass_Block-y(gb) == Agent-y(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 )] )
-                                               & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) + 1 ) & ( Dirt_Block-y(sb) == Agent-y(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 )] ))
-            then Agent-x(?a) + 1
-          else if( move_west(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) - 1 ) & ( Glass_Block-y(gb) == Agent-y(?a) ) & ( Glass_Block-z(gb) == Agent-z(?a)) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 )] )
-                                                   & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) - 1 ) & ( Dirt_Block-y(sb) == Agent-y(?a) ) & ( Dirt_Block-z(sb) == Agent-z(?a)) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 )] ))
-            then Agent-x(?a) - 1
-          else
-            Agent-x(?a);
-
-        Agent-y'(?a) =
-            if ( move_north(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) ) & ( Glass_Block-y(gb) == Agent-y(?a) + 1) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 2 )] )
-                                                  & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) ) & ( Dirt_Block-y(sb) == Agent-y(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 2 )] ) )
-              then Agent-y(?a) + 1
-            else if( move_west(?a) & Agent-alive(?a) & ( ~exists_{ ?gb : Glass_Block } [ ( Glass_Block-present(gb) ) & ( Glass_Block-x(gb) == Agent-x(?a) ) & ( Glass_Block-y(gb) == Agent-y(?a) - 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 1 ) & ( Glass_Block-z(gb) == Agent-z(?a) + 2 )] )
-                                                     & ( ~exists_{ ?sb : Dirt_Block } [ ( Dirt_Block-present(sb) ) & ( Dirt_Block-x(sb) == Agent-x(?a) ) & ( Dirt_Block-y(sb) == Agent-y(?a) - 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 1 ) & ( Dirt_Block-z(sb) == Agent-z(?a) + 2 )] ))
-              then Agent-y(?a) - 1
-            else
-              Agent-y(?a);
-
-        Agent-z'(?a) =
-            Agent-z(?a);
-
-        Agent-alive'(?a) =
-            if ( exists_{ ?la: lava } [ ( Agent-x(?a) == LAVA_X(?la) ) | ( Agent-y(?a) == LAVA_Y(?la) ) | ( Agent-y(?a) == LAVA_Y(?la) ) ] )
-              then false
-            else true;
-
-///////////////////////////////////////
-
-        Glass_Block-hits(?g) =
-            if ( Agent-alive(?a) & exists_{?a : agent} [ Glass_Block-y(?g) - 1 == Agent-y{?a} & ((Glass_Block-z(?g) - 1 == Agent-z(?a)) | (Glass_Block-z(?g) - 2 == Agent-z(?a))) & attack(?a) ] )
-              then Glass_Block-hits(?g) + 1
-            else Glass_Block-hits(?g);
-
-        Glass_Block-present(?g) =
-            if(Agent-has-pickaxe(?a) & Glass_Block-hits(?g) >= 3)
-              then false
-            else if(Glass_Block-hits(?g) >= 7)
-              then false
-            else true;
-
-///////////////////////////////////////
-
-      Dirt_Block-hits(?g) =
-          if ( Agent-alive(?a) & exists_{?a : agent} [ Dirt_Block-y(?g) - 1 == Agent-y{?a} & ((Dirt_Block-z(?g) - 1 == Agent-z(?a)) | (Dirt_Block-z(?g) - 2 == Agent-z(?a))) & attack(?a) ] )
-            then Dirt_Block-hits(?g) + 1
-          else Dirt_Block-hits(?g);
-
-      Dirt_Block-present(?g) =
-          if(Agent-has-pickaxe(?a) & Dirt_Block-hits(?g) >= 4)
-            then false
-          else if(Dirt_Block-hits(?g) >= 10)
-            then false
-          else true;
-
-///////////////////////////////////////
-
-        Agent-num-apples'(?a) =
-            if(Agent-alive(?a) & exists_{?apl : Apple} [ Apple-present(?apl) & Apple-x(?apl) == Agent-x(?a) & Apple-y(?apl) == Agent-y(?a) & Apple-z(?apl) == Agent-z(?a) ]
-              then Agent-num-apples(?a) + 1
-            else
-              Agent-num-apples(?a);
-
-        Apple-present'(?apl) =
-            if(exists_{?a : Agent} [ Apple-x(?apl) == Agent-x(?a) & Apple-y(?apl) == Agent-y(?a) & Apple-z(?apl) == Agent-z(?a) ])
-              then false
-            else
-              true;
-
-        Apple-x'(?apl) =  Apple-x(?apl);
-        Apple-y'(?apl) =  Apple-y(?apl);
-        Apple-z'(?apl) =  Apple-z(?apl);
-
-///////////////////////////////////////
-
-        Agent-num-potatoes'(?a) =
-          if(Agent-alive(?a) & exists_{?po : Potato} [ Potato-present(?po) & Potato-x(?po) == Agent-x(?a) & Potato-y(?po) == Agent-y(?a) & Potato-z(?po) == Agent-z(?a) ]
-            then Agent-num-potatoes(?a) + 1
-          else
-            Agent-num-potatoes(?a);
-
-        Potato-present'(?po) =
-          if(exists_{?a : Agent} [ Potato-x(?po) == Agent-x(?a) & Potato-y(?po) == Agent-y(?a) & Potato-z(?po) == Agent-z(?a) ])
-            then false
-          else
-            true;
-
-        Potato-x'(?po) =  Potato-x(?po);
-        Potato-y'(?po) =  Potato-y(?po);
-        Potato-z'(?po) =  Potato-z(?po);
-
-///////////////////////////////////////
-
-        Agent-num-orchids'(?a) =
-            if(Agent-alive(?a) & exists_{?apl : Orchid} [ Orchid-present(?apl) & Orchid-x(?apl) == Agent-x(?a) & Orchid-y(?apl) == Agent-y(?a) & Orchid-z(?apl) == Agent-z(?a) ]
-              then Agent-num-orchids(?a) + 1
-            else
-              Agent-num-orchids(?a);
-
-        Orchid-present'(?apl) =
-            if(exists_{?a : Agent} [ Orchid-x(?apl) == Agent-x(?a) & Orchid-y(?apl) == Agent-y(?a) & Orchid-z(?apl) == Agent-z(?a) ])
-              then false
-            else
-              true;
-
-        Orchid-x'(?apl) =  Orchid-x(?apl);
-        Orchid-y'(?apl) =  Orchid-y(?apl);
-        Orchid-z'(?apl) =  Orchid-z(?apl);
-
-///////////////////////////////////////
-
-        Agent-num-daisy_flowers'(?a) =
-            if(Agent-alive(?a) & exists_{?apl : Daisy_flower} [ Daisy_flower-present(?apl) & Daisy_flower-x(?apl) == Agent-x(?a) & Daisy_flower-y(?apl) == Agent-y(?a) & Daisy_flower-z(?apl) == Agent-z(?a) ]
-              then Agent-num-daisy_flowers(?a) + 1
-            else
-              Agent-num-Daisy_flowers(?a);
-
-        Daisy_flower-present'(?apl) =
-            if(exists_{?a : Agent} [ Daisy_flower-x(?apl) == Agent-x(?a) & Daisy_flower-y(?apl) == Agent-y(?a) & Daisy_flower-z(?apl) == Agent-z(?a) ])
-              then false
-            else
-              true;
-
-        Daisy_flower-x'(?apl) =  Daisy_flower-x(?apl);
-        Daisy_flower-y'(?apl) =  Daisy_flower-y(?apl);
-        Daisy_flower-z'(?apl) =  Daisy_flower-z(?apl);
-
-///////////////////////////////////////
-
-        Agent-num-Raw_Rabbits'(?a) =
-            if(Agent-alive(?a) & exists_{?apl : Raw_Rabbit} [ Raw_Rabbit-present(?apl) & Raw_Rabbit-x(?apl) == Agent-x(?a) & Raw_Rabbit-y(?apl) == Agent-y(?a) & Raw_Rabbit-z(?apl) == Agent-z(?a) ]
-              then Agent-num-Raw_Rabbits(?a) + 1
-            else
-              Agent-num-Raw_Rabbits(?a);
-
-        Raw_Rabbit-present'(?apl) =
-            if(exists_{?a : Agent} [ Raw_Rabbit-x(?apl) == Agent-x(?a) & Raw_Rabbit-y(?apl) == Agent-y(?a) & Raw_Rabbit-z(?apl) == Agent-z(?a) ])
-              then false
-            else
-              true;
-
-        Raw_Rabbit-x'(?apl) =  Raw_Rabbit-x(?apl);
-        Raw_Rabbit-y'(?apl) =  Raw_Rabbit-y(?apl);
-        Raw_Rabbit-z'(?apl) =  Raw_Rabbit-z(?apl);
-
-///////////////////////////////////////
-
-        Agent-num-Cooked_Rabbits'(?a) =
-            if(Agent-alive(?a) & cook_rabbit(?a) & Agent-num-Raw_Rabbits(?a) >= 1)
-              Agent-num-Cooked_Rabbits(?a) + 1
-            else
-              Agent-num-Cooked_Rabbits(?a);
+        // May need to add an AGENT_GOAL nonfluent, but this can be done within Alloy
 
     };
 
-    reward =
-          if ( exists_{ ?p : passenger } [ PASSENGERS_YOU_CARE_FOR(?p) & forall_{ ?t : taxi} [ ~passenger-in-taxi(?p, ?t) ]   & (passenger-x-curr(?p) == PASSENGER_GOAL_X(?p) & (passenger-y-curr(?p) == PASSENGER_GOAL_Y(?p) ) ) ] )
-              then 5
-          else -5;
 
-    action-preconditions {
-    // there can only be one move per turn
-          ( forall_{ ?a : Agent } [move_west(?a) + move_east(?a) + move_south(?a) + move_north(?a) + attack(?a) + cook_rabbit(?a) ] <= 1 ) ;
+    init-state {
+        Agent-x(Steve) = 6;
+        Agent-y(Steve) = 2;
+        Agent-z(Steve) = 0;
 
-    // don't move outside of the grid
-        forall_{ ?a : Agent } [ move_west(?t) => Agent-x(?t) > 0 ];
-        forall_{ ?a : Agent } [ move_east(?t) => Agent-x(?t) < MAX_X() ];
-        forall_{ ?a : Agent } [ move_north(?t) => Agent-y(?t) < MAX_Y() ];
-        forall_{ ?a: Agent } [ move_south(?t) => Agent-y(?t) > 0 ];
+        Agent-alive(Steve) = true;
+        Agent-has-pickaxe(Steve) = true;
+
+        Agent-num-apples(Steve)      = 0;
+        Agent-num-potatoes(Steve)      = 0;
+        Agent-num-orchids(Steve)     = 1;
+        Agent-num-daisy_flowers(Steve)      = 0;
+        Agent-num-Raw_Rabbits(Steve)      = 0;
+        Agent-num-Cooked_Rabbits(Steve)      = 0;
+
+        Glass_Block-x(gb1)    = 1;
+        Glass_Block-y(gb1)    = 4;
+        Glass_Block-z(gb1)    = 0;
+        Glass_Block-hits(gb1) = 0;
+        Glass_Block-present(gb1)  = true;
+        Glass_Block-x(gb2)    = 2;
+        Glass_Block-y(gb2)    = 4;
+        Glass_Block-z(gb2)    = 0;
+        Glass_Block-hits(gb2) = 0;
+        Glass_Block-present(gb2)  = true;
+        Glass_Block-x(gb3)    = 3;
+        Glass_Block-y(gb3)    = 4;
+        Glass_Block-z(gb3)    = 0;
+        Glass_Block-hits(gb3) = 0;
+        Glass_Block-present(gb3)  = true;
+        Glass_Block-x(gb4)    = 4;
+        Glass_Block-y(gb4)    = 4;
+        Glass_Block-z(gb4)    = 0;
+        Glass_Block-hits(gb4) = 0;
+        Glass_Block-present(gb4)  = true;
+        Glass_Block-x(gb5)    = 5;
+        Glass_Block-y(gb5)    = 4;
+        Glass_Block-z(gb5)    = 0;
+        Glass_Block-hits(gb5) = 0;
+        Glass_Block-present(gb5)  = true;
+        Glass_Block-x(gb6)    = 6;
+        Glass_Block-y(gb6)    = 4;
+        Glass_Block-z(gb6)    = 0;
+        Glass_Block-hits(gb6) = 0;
+        Glass_Block-present(gb6)  = true;
+        Glass_Block-x(gb7)    = 7;
+        Glass_Block-y(gb7)    = 4;
+        Glass_Block-z(gb7)    = 0;
+        Glass_Block-hits(gb7) = 0;
+        Glass_Block-present(gb7)  = true;
+        Glass_Block-x(gb8)    = 8;
+        Glass_Block-y(gb8)    = 4;
+        Glass_Block-z(gb8)    = 0;
+        Glass_Block-hits(gb8) = 0;
+        Glass_Block-present(gb8)  = true;
+        Glass_Block-x(gb9)    = 9;
+        Glass_Block-y(gb9)    = 4;
+        Glass_Block-z(gb9)    = 0;
+        Glass_Block-hits(gb9) = 0;
+        Glass_Block-present(gb9)  = true;
+        Glass_Block-x(gb10)    = 10;
+        Glass_Block-y(gb10)    = 4;
+        Glass_Block-z(gb10)    = 0;
+        Glass_Block-hits(gb10) = 0;
+        Glass_Block-present(gb10)  = true;
+        Glass_Block-x(gb11)    = 11;
+        Glass_Block-y(gb11)    = 4;
+        Glass_Block-z(gb11)    = 0;
+        Glass_Block-hits(gb11) = 0;
+        Glass_Block-present(gb11)  = true;
+
+        Glass_Block-x(gb12)    = 1;
+        Glass_Block-y(gb12)    = 4;
+        Glass_Block-z(gb12)    = 1;
+        Glass_Block-hits(gb12) = 0;
+        Glass_Block-present(gb12)  = true;
+        Glass_Block-x(gb13)    = 2;
+        Glass_Block-y(gb13)    = 4;
+        Glass_Block-z(gb13)    = 1;
+        Glass_Block-hits(gb13) = 0;
+        Glass_Block-present(gb13)  = true;
+        Glass_Block-x(gb14)    = 3;
+        Glass_Block-y(gb14)    = 4;
+        Glass_Block-z(gb14)    = 1;
+        Glass_Block-hits(gb14) = 0;
+        Glass_Block-present(gb14)  = true;
+        Glass_Block-x(gb15)    = 4;
+        Glass_Block-y(gb15)    = 4;
+        Glass_Block-z(gb15)    = 1;
+        Glass_Block-hits(gb15) = 0;
+        Glass_Block-present(gb15)  = true;
+        Glass_Block-x(gb16)    = 5;
+        Glass_Block-y(gb16)    = 4;
+        Glass_Block-z(gb16)    = 1;
+        Glass_Block-hits(gb16) = 0;
+        Glass_Block-present(gb16)  = true;
+        Glass_Block-x(gb17)    = 6;
+        Glass_Block-y(gb17)    = 4;
+        Glass_Block-z(gb17)    = 1;
+        Glass_Block-hits(gb17) = 0;
+        Glass_Block-present(gb17)  = true;
+        Glass_Block-x(gb18)    = 7;
+        Glass_Block-y(gb18)    = 4;
+        Glass_Block-z(gb18)    = 1;
+        Glass_Block-hits(gb18) = 0;
+        Glass_Block-present(gb18)  = true;
+        Glass_Block-x(gb19)    = 8;
+        Glass_Block-y(gb19)    = 4;
+        Glass_Block-z(gb19)    = 1;
+        Glass_Block-hits(gb19) = 0;
+        Glass_Block-present(gb19)  = true;
+        Glass_Block-x(gb20)    = 9;
+        Glass_Block-y(gb20)    = 4;
+        Glass_Block-z(gb20)    = 1;
+        Glass_Block-hits(gb20) = 0;
+        Glass_Block-present(gb20)  = true;
+        Glass_Block-x(gb21)    = 10;
+        Glass_Block-y(gb21)    = 4;
+        Glass_Block-z(gb21)    = 1;
+        Glass_Block-hits(gb21) = 0;
+        Glass_Block-present(gb21)  = true;
+        Glass_Block-x(gb22)    = 11;
+        Glass_Block-y(gb22)    = 4;
+        Glass_Block-z(gb22)    = 1;
+        Glass_Block-hits(gb22) = 0;
+        Glass_Block-present(gb22)  = true;
+
+        Apple-x(a1) = 3;
+        Apple-y(a1) = 2;
+        Apple-z(a1) = 0;
+        Apple-present(a1) = true;
+        Apple-x(a2) = 4;
+        Apple-y(a2) = 3;
+        Apple-z(a2) = 0;
+        Apple-present(a2) = true;
+        Apple-x(a3) = 8;
+        Apple-y(a3) = 2;
+        Apple-z(a3) = 0;
+        Apple-present(a3) = true;
+        Apple-x(a4) = 5;
+        Apple-y(a4) = 9;
+        Apple-z(a4) = 0;
+        Apple-present(a4) = true;
+
+        Raw_Rabbit-x(RR1) = 1;
+        Raw_Rabbit-y(RR1) = 1;
+        Raw_Rabbit-z(RR1) = 0;
+        Raw_Rabbit-present(RR1) = true;
+
+        Potato-x(p1) = 10;
+        Potato-y(p1) = 1;
+        Potato-z(p1) = 0;
+        Potato-present(Potato) = true;
+
+        // Dirt Blocks
+        Dirt_Block-x(drb1) = 0;
+        Dirt_Block-y(drb1) = 10;
+        Dirt_Block-z(drb1) = 3;
+        Dirt_Block-hits(drb1) = 0;
+        Dirt_Block-present(drb1) = true;
+        Dirt_Block-x(drb2) = 1;
+        Dirt_Block-y(drb2) = 10;
+        Dirt_Block-z(drb2) = 3;
+        Dirt_Block-hits(drb2) = 0;
+        Dirt_Block-present(drb2) = true;
+        Dirt_Block-x(drb3) = 2;
+        Dirt_Block-y(drb3) = 10;
+        Dirt_Block-z(drb3) = 3;
+        Dirt_Block-hits(drb3) = 0;
+        Dirt_Block-present(drb3) = true;
+        Dirt_Block-x(drb4) = 3;
+        Dirt_Block-y(drb4) = 10;
+        Dirt_Block-z(drb4) = 3;
+        Dirt_Block-hits(drb4) = 0;
+        Dirt_Block-present(drb4) = true;
+        Dirt_Block-x(drb5) = 4;
+        Dirt_Block-y(drb5) = 10;
+        Dirt_Block-z(drb5) = 3;
+        Dirt_Block-hits(drb1) = 0;
+        Dirt_Block-present(drb1) = true;
+        Dirt_Block-x(drb6) = 5;
+        Dirt_Block-y(drb6) = 10;
+        Dirt_Block-z(drb6) = 3;
+        Dirt_Block-hits(drb6) = 0;
+        Dirt_Block-present(drb6) = true;
+        Dirt_Block-x(drb7) = 6;
+        Dirt_Block-y(drb7) = 10;
+        Dirt_Block-z(drb7) = 3;
+        Dirt_Block-hits(drb7) = 0;
+        Dirt_Block-present(drb7) = true;
+        Dirt_Block-x(drb8) = 7;
+        Dirt_Block-y(drb8) = 10;
+        Dirt_Block-z(drb8) = 3;
+        Dirt_Block-hits(drb8) = 0;
+        Dirt_Block-present(drb8) = true;
+        Dirt_Block-x(drb9) = 8;
+        Dirt_Block-y(drb9) = 10;
+        Dirt_Block-z(drb9) = 3;
+        Dirt_Block-hits(drb9) = 0;
+        Dirt_Block-present(drb9) = true;
+        Dirt_Block-x(drb10) = 9;
+        Dirt_Block-y(drb10) = 10;
+        Dirt_Block-z(drb10) = 3;
+        Dirt_Block-hits(drb10) = 0;
+        Dirt_Block-present(drb10) = true;
+        Dirt_Block-x(drb11) = 10;
+        Dirt_Block-y(drb11) = 10;
+        Dirt_Block-z(drb11) = 3;
+        Dirt_Block-hits(drb11) = 0;
+        Dirt_Block-present(drb11) = true;
+
+        Dirt_Block-x(drb13) = 0;
+        Dirt_Block-y(drb13) = 11;
+        Dirt_Block-z(drb13) = 3;
+        Dirt_Block-hits(drb13) = 0;
+        Dirt_Block-present(drb13) = true;
+        Dirt_Block-x(drb14) = 1;
+        Dirt_Block-y(drb14) = 11;
+        Dirt_Block-z(drb14) = 3;
+        Dirt_Block-hits(drb14) = 0;
+        Dirt_Block-present(drb14) = true;
+        Dirt_Block-x(drb15) = 2;
+        Dirt_Block-y(drb15) = 11;
+        Dirt_Block-z(drb15) = 3;
+        Dirt_Block-hits(drb15) = 0;
+        Dirt_Block-present(drb15) = true;
+        Dirt_Block-x(drb16) = 3;
+        Dirt_Block-y(drb16) = 11;
+        Dirt_Block-z(drb16) = 3;
+        Dirt_Block-hits(drb16) = 0;
+        Dirt_Block-present(drb16) = true;
+        Dirt_Block-x(drb17) = 4;
+        Dirt_Block-y(drb17) = 11;
+        Dirt_Block-z(drb17) = 3;
+        Dirt_Block-hits(drb17) = 0;
+        Dirt_Block-present(drb17) = true;
+        Dirt_Block-x(drb18) = 5;
+        Dirt_Block-y(drb18) = 11;
+        Dirt_Block-z(drb18) = 3;
+        Dirt_Block-hits(drb18) = 0;
+        Dirt_Block-present(drb18) = true;
+        Dirt_Block-x(drb19) = 6;
+        Dirt_Block-y(drb19) = 11;
+        Dirt_Block-z(drb19) = 3;
+        Dirt_Block-hits(drb19) = 0;
+        Dirt_Block-present(drb19) = true;
+        Dirt_Block-x(drb20) = 7;
+        Dirt_Block-y(drb20) = 11;
+        Dirt_Block-z(drb20) = 3;
+        Dirt_Block-hits(drb20) = 0;
+        Dirt_Block-present(drb20) = true;
+        Dirt_Block-x(drb21) = 8;
+        Dirt_Block-y(drb21) = 11;
+        Dirt_Block-z(drb21) = 3;
+        Dirt_Block-hits(drb21) = 0;
+        Dirt_Block-present(drb21) = true;
+        Dirt_Block-x(drb22) = 9;
+        Dirt_Block-y(drb22) = 11;
+        Dirt_Block-z(drb22) = 3;
+        Dirt_Block-hits(drb22) = 0;
+        Dirt_Block-present(drb22) = true;
+        Dirt_Block-x(drb13) = 10;
+        Dirt_Block-y(drb13) = 11;
+        Dirt_Block-z(drb13) = 3;
+        Dirt_Block-hits(drb13) = 0;
+        Dirt_Block-present(drb13) = true;
+
+        // Daisy flowers
+        Daisy_flower-x(daf1) = 0;
+        Daisy_flower-y(daf1) = 10;
+        Daisy_flower-z(daf1) = 4;
+
+        Daisy_flower-present(daf1) = true;
+        Daisy_flower-x(daf2) = 1;
+        Daisy_flower-y(daf2) = 10;
+        Daisy_flower-z(daf2) = 4;
+
+        Daisy_flower-present(daf2) = true;
+        Daisy_flower-x(daf3) = 2;
+        Daisy_flower-y(daf3) = 10;
+        Daisy_flower-z(daf3) = 4;
+
+        Daisy_flower-present(daf3) = true;
+        Daisy_flower-x(daf4) = 3;
+        Daisy_flower-y(daf4) = 10;
+        Daisy_flower-z(daf4) = 4;
+
+        Daisy_flower-present(daf4) = true;
+        Daisy_flower-x(daf5) = 4;
+        Daisy_flower-y(daf5) = 10;
+        Daisy_flower-z(daf5) = 4;
+
+        Daisy_flower-present(daf1) = true;
+        Daisy_flower-x(daf6) = 5;
+        Daisy_flower-y(daf6) = 10;
+        Daisy_flower-z(daf6) = 4;
+
+        Daisy_flower-present(daf6) = true;
+        Daisy_flower-x(daf7) = 6;
+        Daisy_flower-y(daf7) = 10;
+        Daisy_flower-z(daf7) = 4;
+
+        Daisy_flower-present(daf7) = true;
+        Daisy_flower-x(daf8) = 7;
+        Daisy_flower-y(daf8) = 10;
+        Daisy_flower-z(daf8) = 4;
+
+        Daisy_flower-present(daf8) = true;
+        Daisy_flower-x(daf9) = 8;
+        Daisy_flower-y(daf9) = 10;
+        Daisy_flower-z(daf9) = 4;
+
+        Daisy_flower-present(daf9) = true;
+        Daisy_flower-x(daf10) = 9;
+        Daisy_flower-y(daf10) = 10;
+        Daisy_flower-z(daf10) = 4;
+
+        Daisy_flower-present(daf10) = true;
+        Daisy_flower-x(daf11) = 10;
+        Daisy_flower-y(daf11) = 10;
+        Daisy_flower-z(daf11) = 4;
+
+        Daisy_flower-present(daf11) = true;
+
+        Daisy_flower-x(daf13) = 0;
+        Daisy_flower-y(daf13) = 11;
+        Daisy_flower-z(daf13) = 4;
+
+        Daisy_flower-present(daf13) = true;
+        Daisy_flower-x(daf14) = 1;
+        Daisy_flower-y(daf14) = 11;
+        Daisy_flower-z(daf14) = 4;
+
+        Daisy_flower-present(daf14) = true;
+        Daisy_flower-x(daf15) = 2;
+        Daisy_flower-y(daf15) = 11;
+        Daisy_flower-z(daf15) = 4;
+
+        Daisy_flower-present(daf15) = true;
+        Daisy_flower-x(daf16) = 3;
+        Daisy_flower-y(daf16) = 11;
+        Daisy_flower-z(daf16) = 4;
+
+        Daisy_flower-present(daf16) = true;
+        Daisy_flower-x(daf17) = 4;
+        Daisy_flower-y(daf17) = 11;
+        Daisy_flower-z(daf17) = 4;
+
+        Daisy_flower-present(daf17) = true;
+        Daisy_flower-x(daf18) = 5;
+        Daisy_flower-y(daf18) = 11;
+        Daisy_flower-z(daf18) = 4;
+
+        Daisy_flower-present(daf18) = true;
+        Daisy_flower-x(daf19) = 6;
+        Daisy_flower-y(daf19) = 11;
+        Daisy_flower-z(daf19) = 4;
+
+        Daisy_flower-present(daf19) = true;
+        Daisy_flower-x(daf20) = 7;
+        Daisy_flower-y(daf20) = 11;
+        Daisy_flower-z(daf20) = 4;
+
+        Daisy_flower-present(daf20) = true;
+        Daisy_flower-x(daf21) = 8;
+        Daisy_flower-y(daf21) = 11;
+        Daisy_flower-z(daf21) = 4;
+
+        Daisy_flower-present(daf21) = true;
+        Daisy_flower-x(daf22) = 9;
+        Daisy_flower-y(daf22) = 11;
+        Daisy_flower-z(daf22) = 4;
+
+        Daisy_flower-present(daf22) = true;
+        Daisy_flower-x(daf13) = 10;
+        Daisy_flower-y(daf13) = 11;
+        Daisy_flower-z(daf13) = 4;
+
+        Daisy_flower-present(daf13) = true;
+
+
+        // orchid flowers - only placed in states in front of the glass wall
+        Orchid-x(orf1) = 1;
+        Orchid-y(orf1) = 1;
+        Orchid-z(orf1)  = 0;
+        Orchid-present(orf1) = true;
+        Orchid-x(orf2) = 2;
+        Orchid-y(orf2) = 1;
+        Orchid-z(orf2)  = 0;
+        Orchid-present(orf2) = true;
+        Orchid-x(orf3) = 3;
+        Orchid-y(orf3) = 1;
+        Orchid-z(orf3)  = 0;
+        Orchid-present(orf3) = true;
+        Orchid-x(orf4) = 4;
+        Orchid-y(orf4) = 1;
+        Orchid-z(orf4)  = 0;
+        Orchid-present(orf4) = true;
+        Orchid-x(orf5) = 5;
+        Orchid-y(orf5) = 1;
+        Orchid-z(orf5)  = 0;
+        Orchid-present(orf5) = true;
+        Orchid-x(orf6) = 6;
+        Orchid-y(orf6) = 1;
+        Orchid-z(orf6)  = 0;
+        Orchid-present(orf6) = true;
+        Orchid-x(orf7) = 7;
+        Orchid-y(orf7) = 1;
+        Orchid-z(orf7)  = 0;
+        Orchid-present(orf7) = true;
+        Orchid-x(orf8) = 8;
+        Orchid-y(orf8) = 1;
+        Orchid-z(orf8)  = 0;
+        Orchid-present(orf8) = true;
+        Orchid-x(orf9) = 9;
+        Orchid-y(orf9) = 1;
+        Orchid-z(orf9)  = 0;
+        Orchid-present(orf9) = true;
+        Orchid-x(orf1) = 10;
+        Orchid-y(orf1) = 1;
+        Orchid-z(orf1)  = 0;
+        Orchid-present(orf1) = true;
+        Orchid-x(orf11) = 11;
+        Orchid-y(orf11) = 1;
+        Orchid-z(orf11)  = 0;
+        Orchid-present(orf11) = true;
+
+        Orchid-x(orf12) = 1;
+        Orchid-y(orf12) = 2;
+        Orchid-z(orf12)  = 0;
+        Orchid-present(orf12) = true;
+        Orchid-x(orf13) = 1;
+        Orchid-y(orf13) = 2;
+        Orchid-z(orf13)  = 0;
+        Orchid-present(orf13) = true;
+        Orchid-x(orf14) = 1;
+        Orchid-y(orf14) = 2;
+        Orchid-z(orf14)  = 0;
+        Orchid-present(orf14) = true;
+        Orchid-x(orf15) = 1;
+        Orchid-y(orf15) = 2;
+        Orchid-z(orf15)  = 0;
+        Orchid-present(orf15) = true;
+        Orchid-x(orf16) = 1;
+        Orchid-y(orf16) = 2;
+        Orchid-z(orf16)  = 0;
+        Orchid-present(orf16) = true;
+        Orchid-x(orf17) = 1;
+        Orchid-y(orf17) = 2;
+        Orchid-z(orf17)  = 0;
+        Orchid-present(orf17) = true;
+        Orchid-x(orf18) = 1;
+        Orchid-y(orf18) = 2;
+        Orchid-z(orf18)  = 0;
+        Orchid-present(orf18) = true;
+        Orchid-x(orf19) = 1;
+        Orchid-y(orf19) = 2;
+        Orchid-z(orf19)  = 0;
+        Orchid-present(orf19) = true;
+        Orchid-x(orf20) = 1;
+        Orchid-y(orf20) = 2;
+        Orchid-z(orf20)  = 0;
+        Orchid-present(orf20) = true;
+        Orchid-x(orf21) = 1;
+        Orchid-y(orf21) = 2;
+        Orchid-z(orf21)  = 0;
+        Orchid-present(orf21) = true;
+        Orchid-x(orf22) = 1;
+        Orchid-y(orf22) = 2;
+        Orchid-z(orf22)  = 0;
+        Orchid-present(orf22) = true;
+
+        // Redstone block also not defined in transition dynamics above or in this file...
 
     };
-    state-action-constraints {
-        // All entities must be in grid. This is implied by above (except for walls), but should be easier to parse when stated explicitly. WOuld this alone imply the former?
-        (Exact formulation left out because it's probably not helpful...)
-    };
+
+    horizon = 20;
+
+    discount = 1.0;
 }
