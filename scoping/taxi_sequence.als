@@ -114,14 +114,7 @@ pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 */
 one sig T extends Taxi {}
 one sig 
-	P0,P1,P2,P3,P4,P5,P6,P7,P8,P9,
-	P10,P11,P12,P13,P14,P15,P16,P17,P18,P19,
-	P20,P21,P22,P23,P24,P25,P26,P27,P28,P29,
-	P30,P31,P32,P33,P34,P35,P36,P37,P38,P39,
-	P40,P41,P42,P43,P44,P45,P46,P47,P48,P49,
-	P50,P51,P52,P53,P54,P55,P56,P57,P58,P59,
-	P60,P61,P62,P63,P64,P65,P66,P67,P68,P69,
-	P70,P71,P72,P73,P74,P75,P76,P77,P78,P79 
+	P0,P1,P2,P3,P4,P5,P6,P7,P8,P9
 extends Pass {}
 pred initial[s:Time] {
 	0 in s.taxix[T] and 0 in s.taxiy[T]
@@ -130,24 +123,9 @@ pred initial[s:Time] {
 pred goal[s:Time] {
 	4 in s.taxix[T]
 	4 in s.taxiy[T]
-	4 in s.passx[P42]
-	4 in s.passy[P42]
-	False in s.pint[P42][T]
-}
-pred in_taxix[s:Time,t:Taxi,i:Int] {
-	s.taxix[t] in i
-}
-pred in_taxiy[s:Time,t:Taxi,i:Int] {
-	s.taxiy[t] in i
-}
-pred in_passx[s:Time,p:Pass,i:Int] {
-	s.passx[p] in i
-}
-pred in_passy[s:Time,p:Pass,i:Int] {
-	s.passy[p] in i
-}
-pred in_pint[s:Time,p:Pass,t:Taxi,b:Bool] {
-	s.pint[p][t] in b
+	4 in s.passx[P7]
+	4 in s.passy[P7]
+	False in s.pint[P7][T]
 }
 /*
 	*
@@ -169,24 +147,24 @@ run sequence {
 	goal[last]
 	all s:Time-last | let ss=s.next | {
 		all t:Taxi | {
-			all tx:s.taxix[t] | {
-				!in_taxix[last,t,tx] implies (taxix_movee[s,ss,t,tx] or taxix_movew[s,ss,t,tx] or taxix_else[s,ss,t,tx])
+			all txc:last.taxix[t],txe:s.taxix[t] | {
+				!(txc in txe) implies (taxix_movee[s,ss,t,txe] or taxix_movew[s,ss,t,txe] or taxix_else[s,ss,t,txe])
 			}
-			all ty:s.taxiy[t] | {
-				!in_taxiy[last,t,ty] implies (taxiy_moven[s,ss,t,ty] or taxiy_moves[s,ss,t,ty] or taxiy_else[s,ss,t,ty])
+			all tyc:last.taxiy[t],tye:s.taxiy[t] | {
+				!(tyc in tye) implies (taxiy_moven[s,ss,t,tye] or taxiy_moves[s,ss,t,tye] or taxiy_else[s,ss,t,tye])
 			}
 		}
 		all p:Pass | {
-			all px:s.passx[p] | {
-				!in_passx[last,p,px] implies (passx_movee[s,ss,p,px] or passx_movew[s,ss,p,px] or passx_else[s,ss,p,px])
+			all pxc:last.passx[p],pxe:s.passx[p] | {
+				!(pxc in pxe) implies (passx_movee[s,ss,p,pxe] or passx_movew[s,ss,p,pxe] or passx_else[s,ss,p,pxe])
 			}
-			all py:s.passy[p] | {
-				!in_passy[last,p,py] implies (passy_moven[s,ss,p,py] or passy_moves[s,ss,p,py] or passy_else[s,ss,p,py])
+			all pyc:last.passy[p],pye:s.passy[p] | {
+				!(pyc in pye) implies (passy_moven[s,ss,p,pye] or passy_moves[s,ss,p,pye] or passy_else[s,ss,p,pye])
 			}
 		}
 		all t:Taxi,p:Pass | {
-			all pnt:s.pint[p,t] | {
-				!in_pint[last,p,t,pnt] implies (pint_pickup[s,ss,p,t,pnt] or pint_dropoff[s,ss,p,t,pnt] or pint_else[s,ss,p,t,pnt])
+			all pntc:last.pint[p,t],pnte:s.pint[p,t] | {
+				!(pntc in pnte) implies (pint_pickup[s,ss,p,t,pnte] or pint_dropoff[s,ss,p,t,pnte] or pint_else[s,ss,p,t,pnte])
 			}
 		}
 		-- ACTION EFFECT FRAMING
@@ -321,4 +299,4 @@ run sequence {
 			}
 		}
 	}
-} for 11 Time, 4 Int
+} for 11 Time, 5 Int
