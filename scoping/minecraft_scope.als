@@ -146,29 +146,49 @@ pred dirtblockpresent_hand[s:Time,ss:Time,db:DirtBlock,dbp:Bool] {
 	Bool in ss.dirtblockpresent[db]
 }
 -- TODO
+-- RDDL: cdf {agentnumorchids}
+pred agentnumorchids_grab[s:Time,ss:Time,a:Agent,ano:Int] {
+	Bool in s.agentalive[a]
+	all o:OrchidFlower | Bool in s.orchidpresent[o] and (Int in s.orchidx[o] and Int in s.agentx[a]) and (Int in s.orchidy[o] and Int in s.agenty[a]) and (Int in s.orchidz[o] and Int in s.agentz[a])
+	Int in ss.agentnumorchids[a]
+}
+-- RDDL: cdf {orchidpresent}
+pred orchidpresent_grab[s:Time,ss:Time,o:OrchidFlower,op:Bool] {
+	all a:Agent | (Int in s.orchidx[o] and Int in s.agentx[a]) and (Int in s.orchidy[o] and Int in s.agenty[a]) and (Int in s.orchidz[o] and Int in s.agentz[a])
+	Bool in ss.orchidpresent[o]
+}
+-- RDDL: cdf {agentnumpotatoes}
+pred agentnumpotatoes_grab[s:Time,ss:Time,a:Agent,anp:Int] {
+	Bool in s.agentalive[a]
+	all p:Potato | Bool in s.potatopresent[p] and (Int in s.potatox[p] and Int in s.agentx[a]) and (Int in s.potatoy[p] and Int in s.agenty[a]) and (Int in s.potatoz[p] and Int in s.agentz[a])
+	Int in ss.agentnumpotatoes[a]
+}
+-- RDDL: cdf {potatopresent}
+pred potatopresent_grab[s:Time,ss:Time,p:Potato,pp:Bool] {
+	all a:Agent | (Int in s.potatox[p] and Int in s.agentx[a]) and (Int in s.potatoy[p] and Int in s.agenty[a]) and (Int in s.potatoz[p] and Int in s.agentz[a])
+	Bool in ss.potatopresent[p]
+}
+-- RDDL: cdf {agentnumrawrabbits}
+pred agentnumrawrabbits_grab[s:Time,ss:Time,a:Agent,anrr:Int] {
+	Bool in s.agentalive[a]
+	all rr:RawRabbit | Bool in s.rawrabbitpresent[rr] and (Int in s.rawrabbitx[rr] and Int in s.agentx[a]) and (Int in s.rawrabbity[rr] and Int in s.agenty[a]) and (Int in s.rawrabbitz[rr] and Int in s.agentz[a])
+	Int in ss.agentnumorchids[a]
+}
+-- RDDL: cdf {rawrabbitspresent}
+pred rawrabbitpresent_grab[s:Time,ss:Time,rr:RawRabbit,rrp:Bool] {
+	all a:Agent | (Int in s.rawrabbitx[rr] and Int in s.agentx[a]) and (Int in s.rawrabbity[rr] and Int in s.agenty[a]) and (Int in s.rawrabbitz[rr] and Int in s.agentz[a])
+	Bool in ss.rawrabbitpresent[rr]
+}
+-- RDDL: cdf {agentnumcookedrabits}
+pred agentnumcookedrabbits_cook[s:Time,ss:Time,a:Agent,ancr:Int] {
+	Bool in s.agentalive[a]
+	Int in s.agentnumrawrabbits[a]
+	Int in ss.agentnumcookedrabbits[a]
+}
 -- RDDL: cdf {agentnumapples}
 -- RDDL: cdf {applepresent}
--- RDDL: cdf {applex}
--- RDDL: cdf {appley}
--- RDDL: cdf {applez}
--- RDDL: cdf {agentnumpotatoes}
--- RDDL: cdf {potatopresent}
--- RDDL: cdf {potatox}
--- RDDL: cdf {potatoy}
--- RDDL: cdf {potatoz}
--- RDDL: cdf {orchidpresent}
--- RDDL: cdf {orchidx}
--- RDDL: cdf {orchidy}
--- RDDL: cdf {orchidz}
+-- RDDL: cdf {agentnumdaisyflowers}
 -- RDDL: cdf {daisyflowerpresent}
--- RDDL: cdf {daisyflowerx}
--- RDDL: cdf {daisyflowery}
--- RDDL: cdf {daisyflowerz}
--- RDDL: cdf {rawrabbitpresent}
--- RDDL: cdf {rawrabbitx}
--- RDDL: cdf {rawrabbity}
--- RDDL: cdf {rawrabbitz}
--- RDDL: cdf {numcookedrabbits}
 /*
 	*
 		*
@@ -213,7 +233,7 @@ extends Lava {}
 pred initial[s:Time] {
 	6 in s.agentx[Steve] and 3 in s.agenty[Steve] 0 in s.agentz[Steve]
 	True in s.agentalive[Steve] and True in s.agenthaspickaxe[Steve]
-	0 in s.agentnumapples[Steve] and 0 in s.agentnumpotatoes[Steve]
+	0 in s.agentnumapples[Steve] and 1 in s.agentnumpotatoes[Steve]
 	1 in s.agentnumorchids[Steve] and 0 in s.agentnumdaisyflowers[Steve]
 	0 in s.agentnumrawrabbits[Steve] and 0 in s.agentnumcookedrabbits[Steve]
     1 in s.glassblockx[GB1]   	and 4 in s.glassblocky[GB1]     		and 0 in s.glassblockz[GB1]
@@ -406,7 +426,11 @@ pred initial[s:Time] {
     11 in s.lavax[LA43]  	and 9 in s.lavay[LA43]  	and 0 in s.lavaz[LA43]
 }
 pred goal[s:Time] {
-	6 in s.agentx[Steve] and 9 in s.agenty[Steve] 0 in s.agentz[Steve]
+	6 in s.agentx[Steve]
+	9 in s.agenty[Steve]
+	0 in s.agentz[Steve]
+	1 in s.agentnumpotatoes[Steve]
+	1 in s.agentnumcookedrabbits[Steve]
 }
 /*
 	*
@@ -416,6 +440,7 @@ pred goal[s:Time] {
 	*
 */
 fun relevant : univ {
+	-- TODO cookedrabbits left out because there's no state variable with it as input
 	{a:Agent | #Initial.agentx[a]!=1}+
 	{a:Agent | #Initial.agenty[a]!=1}+
 	{a:Agent | #Initial.agentalive[a]!=1}+
@@ -473,6 +498,18 @@ run scope {
 		all aac:Goal.agentalive[a], aae:Initial.agentalive[a] | {
 			!(aac in aae) implies (agentalive_lava[Goal,Initial,a,aae])
 		}
+		all anoc:Goal.agentnumorchids[a], anoe:Initial.agentnumorchids[a] | {
+			!(anoc in anoe) implies (agentnumorchids_grab[Goal,Initial,a,anoe])
+		}
+		all anpc:Goal.agentnumpotatoes[a], anpe:Initial.agentnumpotatoes[a] | {
+			!(anpc in anpe) implies (agentnumpotatoes_grab[Goal,Initial,a,anpe])
+		}
+		all anrrc:Goal.agentnumrawrabbits[a], anrre:Initial.agentnumrawrabbits[a] | {
+			!(anrrc in anrre) implies (agentnumrawrabbits_grab[Goal,Initial,a,anrre])
+		}
+		all ancrc:Goal.agentnumcookedrabbits[a], ancre:Initial.agentnumcookedrabbits[a] | {
+			!(ancrc in ancre) implies (agentnumcookedrabbits_cook[Goal,Initial,a,ancre])
+		}
 	}
 	all gb:GlassBlock | {
 		all gbhc:Goal.glassblockhits[gb], gbhe:Initial.glassblockhits[gb] | {
@@ -488,6 +525,21 @@ run scope {
 		}
 		all dbpc:Goal.dirtblockpresent[db],dbpe:Initial.dirtblockpresent[db] | {
 			!(dbpc in dbpe) implies (dirtblockpresent_axe[Goal,Initial,db,dbpe] or dirtblockpresent_hand[Goal,Initial,db,dbpe])
+		}
+	}
+	all o:OrchidFlower | {
+		all opc:Goal.orchidpresent[o],ope:Goal.orchidpresent[o] | {
+			!(opc in ope) implies (orchidpresent_grab[Goal,Initial,o,ope])
+		}
+	}
+	all p:Potato | {
+		all ppc:Goal.potatopresent[p],ppe:Goal.potatopresent[p] | {
+			!(ppc in ppe) implies (potatopresent_grab[Goal,Initial,p,ppe])
+		}
+	}
+	all rr:RawRabbit | {
+		all rrpc:Goal.rawrabbitpresent[rr],rrpe:Goal.rawrabbitpresent[rr] | {
+			!(rrpc in rrpe) implies (rawrabbitpresent_grab[Goal,Initial,rr,rrpe])
 		}
 	}
 } for 5 Int
