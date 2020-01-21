@@ -27,18 +27,12 @@ pred taxix_movee[s:Time,ss:Time,t:Taxi,tx:Int] {
 pred taxix_movew[s:Time,ss:Time,t:Taxi,tx:Int] {
 	Int in ss.taxix[t]
 }
-pred taxix_else[s:Time,ss:Time,t:Taxi,tx:Int] {
-	tx in ss.taxix[t]
-}
 -- RDDL: cdf { taxiy } 
 pred taxiy_moven[s:Time,ss:Time,t:Taxi,ty:Int] {
 	Int in ss.taxiy[t]
 }
 pred taxiy_moves[s:Time,ss:Time,t:Taxi,ty:Int] {
 	Int in ss.taxiy[t]
-}
-pred taxiy_else[s:Time,ss:Time,t:Taxi,ty:Int] {
-	ty in ss.taxiy[t]
 }
 -- RDDL: cdf { passx } 
 pred passx_movee[s:Time,ss:Time,p:Pass,px:Int] {
@@ -53,11 +47,8 @@ pred passx_movew[s:Time,ss:Time,p:Pass,px:Int] {
 	}
 	Int in ss.passx[p]
 }
-pred passx_else[s:Time,ss:Time,p:Pass,px:Int] {
-	px in ss.passx[p]
-}
 -- RDDL: cdf { passy } 
-pred passy_moven[s:Time,ss:Time,p:Pass,py:Int] {
+pred passy_moven[s:Time,ss:Time,p:Pass,px:Int] {
 	all t:Taxi | {
 		Bool in s.pint[p,t]
 	}
@@ -68,9 +59,6 @@ pred passy_moves[s:Time,ss:Time,p:Pass,py:Int] {
 		Bool in s.pint[p,t]
 	}
 	Int in ss.passy[p]
-}
-pred passy_else[s:Time,ss:Time,p:Pass,py:Int] {
-	py in ss.passy[p]
 }
 -- RDDL: cdf { pint }
 pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
@@ -84,9 +72,6 @@ pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	Bool in s.pint[p,t]
 	True in pnt
 	Bool in ss.pint[p,t]
-}
-pred pint_else[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
-	pnt in ss.pint[p,t]
 }
 /*
 	*
@@ -115,7 +100,7 @@ pred goal[s:Time] {
 	4 in s.taxiy[T]
 	4 in s.passx[P42]
 	4 in s.passy[P42]
-	True in s.pint[P42][T]
+	False in s.pint[P42][T]
 }
 /*
 	*
