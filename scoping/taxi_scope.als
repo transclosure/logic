@@ -65,12 +65,12 @@ pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	Int in s.taxix[t] and Int in s.passx[p]
 	Int in s.taxiy[t] and Int in s.passy[p]
 	Bool in s.pint[p,t]
-	False in pnt
+	False=pnt
 	Bool in ss.pint[p,t]
 }
 pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	Bool in s.pint[p,t]
-	True in pnt
+	True=pnt
 	Bool in ss.pint[p,t]
 }
 /*

@@ -92,13 +92,13 @@ pred pint_pickup[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	some (s.taxix[t]&s.passx[p])
 	some (s.taxiy[t]&s.passy[p])
 	False in s.pint[p,t]
-	False in pnt
+	False=pnt
 	True in s.pickup[t,p]
 	True in ss.pint[p,t]
 }
 pred pint_dropoff[s:Time,ss:Time,p:Pass,t:Taxi,pnt:Bool] {
 	True in s.pint[p,t]
-	True in pnt
+	True=pnt
 	True in s.dropoff[t,p]
 	False in ss.pint[p,t]
 }

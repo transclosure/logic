@@ -75,12 +75,16 @@ pred agentx_movee[s:Time,ss:Time,a:Agent,ax:Int] {
 	Bool in s.agentalive[a]
 	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	no gb:GlassBlock | True=s.glassblockpresent[gb] and plus[ax,1]=s.glassblockx[gb] and s.agenty[a]=s.glassblocky[gb] and (s.agentz[a]=s.glassblockz[gb] or plus[s.agentz[a],1]=s.glassblockz[gb])
+	no db:DirtBlock |  True=s.dirtblockpresent[db] and plus[ax,1]=s.dirtblockx[db] and s.agenty[a]=s.dirtblocky[db] and (s.agentz[a]=s.dirtblockz[db] or plus[s.agentz[a],1]=s.dirtblockz[db])
 	Int in ss.agentx[a]
 }
 pred agentx_movew[s:Time,ss:Time,a:Agent,ax:Int] {
 	Bool in s.agentalive[a]
 	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	no gb:GlassBlock | True=s.glassblockpresent[gb] and minus[ax,1]=s.glassblockx[gb] and s.agenty[a]=s.glassblocky[gb] and (s.agentz[a]=s.glassblockz[gb] or plus[s.agentz[a],1]=s.glassblockz[gb])
+	no db:DirtBlock |  True=s.dirtblockpresent[db] and minus[ax,1]=s.dirtblockx[db] and s.agenty[a]=s.dirtblocky[db] and (s.agentz[a]=s.dirtblockz[db] or plus[s.agentz[a],1]=s.dirtblockz[db])
 	Int in ss.agentx[a]
 }
 -- RDDL: cdf { agenty }
@@ -88,12 +92,16 @@ pred agenty_moven[s:Time,ss:Time,a:Agent,ay:Int] {
 	Bool in s.agentalive[a]
 	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	no gb:GlassBlock | True=s.glassblockpresent[gb] and s.agentx[a]=s.glassblockx[gb] and plus[ay,1]=s.glassblocky[gb] and (s.agentz[a]=s.glassblockz[gb] or plus[s.agentz[a],1]=s.glassblockz[gb])
+	no db:DirtBlock |  True=s.dirtblockpresent[db] and s.agentx[a]=s.dirtblockx[db] and plus[ay,1]=s.dirtblocky[db] and (s.agentz[a]=s.dirtblockz[db] or plus[s.agentz[a],1]=s.dirtblockz[db])
 	Int in ss.agenty[a]
 }
 pred agenty_moves[s:Time,ss:Time,a:Agent,ay:Int] {
 	Bool in s.agentalive[a]
 	all gb:GlassBlock | Bool in s.glassblockpresent[gb] and (Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	all db:DirtBlock | Bool in s.dirtblockpresent[db] and (Int in s.dirtblockx[db] and Int in s.agentx[a]) and (Int in s.dirtblocky[db] and Int in s.agenty[a]) and (Int in s.dirtblockz[db] and Int in s.agentz[a])
+	no gb:GlassBlock | True=s.glassblockpresent[gb] and s.agentx[a]=s.glassblockx[gb] and minus[ay,1]=s.glassblocky[gb] and (s.agentz[a]=s.glassblockz[gb] or plus[s.agentz[a],1]=s.glassblockz[gb])
+	no db:DirtBlock |  True=s.dirtblockpresent[db] and s.agentx[a]=s.dirtblockx[db] and minus[ay,1]=s.dirtblocky[db] and (s.agentz[a]=s.dirtblockz[db] or plus[s.agentz[a],1]=s.dirtblockz[db])
 	Int in ss.agenty[a]
 }
 -- RDDL: cdf { agentalive }
@@ -108,9 +116,6 @@ pred glassblockhits_attack[s:Time,ss:Time,gb:GlassBlock,gbh:Int] {
 		(Int in s.glassblockx[gb] and Int in s.agentx[a]) and (Int in s.glassblocky[gb] and Int in s.agenty[a]) and (Int in s.glassblockz[gb] and Int in s.agentz[a])
 	}
 	Int in ss.glassblockhits[gb]
-}
-pred glassblockhits_else[s:Time,ss:Time,gb:GlassBlock,gbh:Int] {
-	gbh in ss.glassblockhits[gb]
 }
 -- RDDL: cdf {glassblockpresent}
 pred glassblockpresent_axe[s:Time,ss:Time,gb:GlassBlock,gbp:Bool] {
@@ -459,30 +464,30 @@ run scope {
 	initial[Initial]
 	goal[Goal]
 	all a:Agent | {
-		all ax:Initial.agentx[a] | {
-			!(Goal.agentx[a] in ax) implies (agentx_movee[Goal,Initial,a,ax] or agentx_movew[Goal,Initial,a,ax])
+		all axc:Goal.agentx[a],axe:Initial.agentx[a] | {
+			!(axc in axe) implies (agentx_movee[Goal,Initial,a,axe] or agentx_movew[Goal,Initial,a,axe])
 		}
-		all ay:Initial.agenty[a] | {
-			!(Goal.agenty[a] in ay) implies (agenty_moven[Goal,Initial,a,ay] or agenty_moves[Goal,Initial,a,ay])
+		all ayc:Goal.agenty[a],aye:Initial.agenty[a] | {
+			!(ayc in aye) implies (agenty_moven[Goal,Initial,a,aye] or agenty_moves[Goal,Initial,a,aye])
 		}
-		all aa:Initial.agentalive[a] | {
-			!(Goal.agentalive[a] in aa) implies (agentalive_lava[Goal,Initial,a,aa])
+		all aac:Goal.agentalive[a], aae:Initial.agentalive[a] | {
+			!(aac in aae) implies (agentalive_lava[Goal,Initial,a,aae])
 		}
 	}
 	all gb:GlassBlock | {
-		all gbh:Initial.glassblockhits[gb] | {
-			!(Goal.glassblockhits[gb] in gbh) implies (glassblockhits_attack[Goal,Initial,gb,gbh])
+		all gbhc:Goal.glassblockhits[gb], gbhe:Initial.glassblockhits[gb] | {
+			!(gbhc in gbhe) implies (glassblockhits_attack[Goal,Initial,gb,gbhe])
 		}
-		all gbp:Initial.glassblockpresent[gb] | {
-			!(Goal.glassblockpresent[gb] in gbp) implies (glassblockpresent_axe[Goal,Initial,gb,gbp] or glassblockpresent_hand[Goal,Initial,gb,gbp])
+		all gbpc:Goal.glassblockpresent[gb],gbpe:Initial.glassblockpresent[gb] | {
+			!(gbpc in gbpe) implies (glassblockpresent_axe[Goal,Initial,gb,gbpe] or glassblockpresent_hand[Goal,Initial,gb,gbpe])
 		}
 	}
 	all db:DirtBlock | {
-		all dbh:Initial.dirtblockhits[db] | {
-			!(Goal.dirtblockhits[db] in dbh) implies (dirtblockhits_attack[Goal,Initial,db,dbh])
+		all dbhc:Goal.dirtblockhits[db],dbhe:Initial.dirtblockhits[db] | {
+			!(dbhc in dbhe) implies (dirtblockhits_attack[Goal,Initial,db,dbhe])
 		}
-		all dbp:Initial.dirtblockpresent[db] | {
-			!(Goal.dirtblockpresent[db] in dbp) implies (dirtblockpresent_axe[Goal,Initial,db,dbp] or dirtblockpresent_hand[Goal,Initial,db,dbp])
+		all dbpc:Goal.dirtblockpresent[db],dbpe:Initial.dirtblockpresent[db] | {
+			!(dbpc in dbpe) implies (dirtblockpresent_axe[Goal,Initial,db,dbpe] or dirtblockpresent_hand[Goal,Initial,db,dbpe])
 		}
 	}
 } for 5 Int
