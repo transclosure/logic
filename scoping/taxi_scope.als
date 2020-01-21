@@ -96,8 +96,6 @@ pred initial[s:Time] {
 	all p:Pass | 0 in s.passx[p] and 4 in s.passy[p] and False in s.pint[p][T]
 }
 pred goal[s:Time] {
-	4 in s.taxix[T]
-	4 in s.taxiy[T]
 	4 in s.passx[P42]
 	4 in s.passy[P42]
 	False in s.pint[P42][T]
