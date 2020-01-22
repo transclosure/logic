@@ -173,7 +173,7 @@ pred potatopresent_grab[s:Time,ss:Time,p:Potato,pp:Bool] {
 pred agentnumrawrabbits_grab[s:Time,ss:Time,a:Agent,anrr:Int] {
 	Bool in s.agentalive[a]
 	all rr:RawRabbit | Bool in s.rawrabbitpresent[rr] and (Int in s.rawrabbitx[rr] and Int in s.agentx[a]) and (Int in s.rawrabbity[rr] and Int in s.agenty[a]) and (Int in s.rawrabbitz[rr] and Int in s.agentz[a])
-	Int in ss.agentnumorchids[a]
+	Int in ss.agentnumrawrabbits[a]
 }
 -- RDDL: cdf {rawrabbitspresent}
 pred rawrabbitpresent_grab[s:Time,ss:Time,rr:RawRabbit,rrp:Bool] {
@@ -192,13 +192,27 @@ pred cookedrabbitpresent_cook[s:Time,ss:Time,cr:CookedRabbit,crp:Bool] {
 	Bool in ss.cookedrabbitpresent[cr]
 }
 -- RDDL: cdf {agentnumapples}
--- TODO
+pred agentnumapples_grab[s:Time,ss:Time,a:Agent,ana:Int] {
+	Bool in s.agentalive[a]
+	all p:Apple | Bool in s.applepresent[p] and (Int in s.applex[p] and Int in s.agentx[a]) and (Int in s.appley[p] and Int in s.agenty[a]) and (Int in s.applez[p] and Int in s.agentz[a])
+	Int in ss.agentnumapples[a]
+}
 -- RDDL: cdf {applepresent}
--- TODO
+pred applepresent_grab[s:Time,ss:Time,p:Apple,ap:Bool] {
+	all a:Agent | (Int in s.applex[p] and Int in s.agentx[a]) and (Int in s.appley[p] and Int in s.agenty[a]) and (Int in s.applez[p] and Int in s.agentz[a])
+	Bool in ss.applepresent[p]
+}
 -- RDDL: cdf {agentnumdaisyflowers}
--- TODO
+pred agentnumdaisyflowers_grab[s:Time,ss:Time,a:Agent,anp:Int] {
+	Bool in s.agentalive[a]
+	all p:DaisyFlower | Bool in s.daisyflowerpresent[p] and (Int in s.daisyflowerx[p] and Int in s.agentx[a]) and (Int in s.daisyflowery[p] and Int in s.agenty[a]) and (Int in s.daisyflowerz[p] and Int in s.agentz[a])
+	Int in ss.agentnumdaisyflowers[a]
+}
 -- RDDL: cdf {daisyflowerpresent}
--- TODO
+pred daisyflowerpresent_grab[s:Time,ss:Time,p:DaisyFlower,pp:Bool] {
+	all a:Agent | (Int in s.daisyflowerx[p] and Int in s.agentx[a]) and (Int in s.daisyflowery[p] and Int in s.agenty[a]) and (Int in s.daisyflowerz[p] and Int in s.agentz[a])
+	Bool in ss.daisyflowerpresent[p]
+}
 /*
 	*
 		*
@@ -245,7 +259,7 @@ pred initial[s:Time] {
 	True in s.agentalive[Steve] and True in s.agenthaspickaxe[Steve]
 	0 in s.agentnumapples[Steve] and 1 in s.agentnumpotatoes[Steve]
 	1 in s.agentnumorchids[Steve] and 0 in s.agentnumdaisyflowers[Steve]
-	0 in s.agentnumrawrabbits[Steve] and 0 in s.agentnumcookedrabbits[Steve]
+	1 in s.agentnumrawrabbits[Steve] and 0 in s.agentnumcookedrabbits[Steve]
     1 in s.glassblockx[GB1]   	and 4 in s.glassblocky[GB1]     		and 0 in s.glassblockz[GB1]
     0 in s.glassblockhits[GB1] 	and True in s.glassblockpresent[GB1] 
     2 in s.glassblockx[GB2]   	and 4 in s.glassblocky[GB2]     		and 0 in s.glassblockz[GB2]
@@ -437,7 +451,7 @@ pred initial[s:Time] {
 }
 pred goal[s:Time] {
 	6 in s.agentx[Steve]
-	9 in s.agenty[Steve]
+	3 in s.agenty[Steve]
 	0 in s.agentz[Steve]
 	1 in s.agentnumpotatoes[Steve]
 	1 in s.agentnumcookedrabbits[Steve]
@@ -450,7 +464,6 @@ pred goal[s:Time] {
 	*
 */
 fun relevant : univ {
-	-- TODO cookedrabbits left out because there's no state variable with it as input
 	{a:Agent | #Initial.agentx[a]!=1}+
 	{a:Agent | #Initial.agenty[a]!=1}+
 	{a:Agent | #Initial.agentalive[a]!=1}+
@@ -521,6 +534,12 @@ run scope {
 		all ancrc:Goal.agentnumcookedrabbits[a], ancre:Initial.agentnumcookedrabbits[a] | {
 			!(ancrc in ancre) implies (agentnumcookedrabbits_cook[Goal,Initial,a,ancre])
 		}
+		all anac:Goal.agentnumapples[a], anae:Initial.agentnumapples[a] | {
+			!(anac in anae) implies (agentnumapples_grab[Goal,Initial,a,anae])
+		}
+		all andfc:Goal.agentnumdaisyflowers[a], andfe:Initial.agentnumdaisyflowers[a] | {
+			!(andfc in andfe) implies (agentnumdaisyflowers_grab[Goal,Initial,a,andfe])
+		}
 	}
 	all gb:GlassBlock | {
 		all gbhc:Goal.glassblockhits[gb], gbhe:Initial.glassblockhits[gb] | {
@@ -556,6 +575,16 @@ run scope {
 	all cr:CookedRabbit | {
 		all crpc:Goal.cookedrabbitpresent[cr],crpe:Goal.cookedrabbitpresent[cr] | {
 			!(crpc in crpe) implies (cookedrabbitpresent_cook[Goal,Initial,cr,crpe])
+		}
+	}
+	all a:Apple | {
+		all apc:Goal.applepresent[a],ape:Goal.applepresent[a] | {
+			!(apc in ape) implies (applepresent_grab[Goal,Initial,a,ape])
+		}
+	}
+	all df:DaisyFlower | {
+		all dfpc:Goal.daisyflowerpresent[df],dfpe:Goal.daisyflowerpresent[df] | {
+			!(dfpc in dfpe) implies (daisyflowerpresent_grab[Goal,Initial,df,dfpe])
 		}
 	}
 } for 5 Int
