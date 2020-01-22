@@ -41,6 +41,7 @@ abstract sig Time {
 	applepresent: Apple -> Bool,
 	daisyflowerpresent: DaisyFlower -> Bool,
 	rawrabbitpresent: RawRabbit -> Bool,
+	cookedrabbitpresent: CookedRabbit -> Bool,
 	orchidpresent: OrchidFlower -> Bool,
 	potatopresent: Potato -> Bool,
 	-- non-fluents
@@ -185,10 +186,19 @@ pred agentnumcookedrabbits_cook[s:Time,ss:Time,a:Agent,ancr:Int] {
 	Int in s.agentnumrawrabbits[a]
 	Int in ss.agentnumcookedrabbits[a]
 }
+-- RDDL: cdf {cookedrabbitpresent}
+pred cookedrabbitpresent_cook[s:Time,ss:Time,cr:CookedRabbit,crp:Bool] {
+	all a:Agent | Bool in s.agentalive[a] and Int in s.agentnumrawrabbits[a]
+	Bool in ss.cookedrabbitpresent[cr]
+}
 -- RDDL: cdf {agentnumapples}
+-- TODO
 -- RDDL: cdf {applepresent}
+-- TODO
 -- RDDL: cdf {agentnumdaisyflowers}
+-- TODO
 -- RDDL: cdf {daisyflowerpresent}
+-- TODO
 /*
 	*
 		*
@@ -473,6 +483,7 @@ fun relevant : univ {
 	{g:RawRabbit | #Initial.rawrabbity[g]!=1}+
 	{g:RawRabbit | #Initial.rawrabbitz[g]!=1}+
 	{g:RawRabbit | #Initial.rawrabbitpresent[g]!=1}+
+	{g:CookedRabbit | #Initial.cookedrabbitpresent[g]!=1}+
 	{g:OrchidFlower | #Initial.orchidx[g]!=1}+
 	{g:OrchidFlower | #Initial.orchidy[g]!=1}+
 	{g:OrchidFlower | #Initial.orchidz[g]!=1}+
@@ -540,6 +551,11 @@ run scope {
 	all rr:RawRabbit | {
 		all rrpc:Goal.rawrabbitpresent[rr],rrpe:Goal.rawrabbitpresent[rr] | {
 			!(rrpc in rrpe) implies (rawrabbitpresent_grab[Goal,Initial,rr,rrpe])
+		}
+	}
+	all cr:CookedRabbit | {
+		all crpc:Goal.cookedrabbitpresent[cr],crpe:Goal.cookedrabbitpresent[cr] | {
+			!(crpc in crpe) implies (cookedrabbitpresent_cook[Goal,Initial,cr,crpe])
 		}
 	}
 } for 5 Int
